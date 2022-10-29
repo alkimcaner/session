@@ -76,20 +76,28 @@ export default function Session() {
               <BsClipboard />
             </button>
           </li>
-          <li className="tooltip" data-tip="Toggle video">
+          <li
+            className="tooltip"
+            data-tip={isVideoEnabled ? "Disable camera" : "Enable camera"}
+          >
             <button
               onClick={handleToggleVideo}
-              className="text-xl p-2 rounded-full hover:bg-base-100 hover:text-red-500"
+              className="text-xl p-2 rounded-full hover:bg-base-100 hover:text-blue-500"
             >
-              {isVideoEnabled ? <BsCameraVideoOff /> : <BsCameraVideo />}
+              {isVideoEnabled ? <BsCameraVideo /> : <BsCameraVideoOff />}
             </button>
           </li>
-          <li className="tooltip" data-tip="Toggle audio">
+          <li
+            className="tooltip"
+            data-tip={
+              isAudioEnabled ? "Disable microphone" : "Enable microphone"
+            }
+          >
             <button
               onClick={handleToggleAudio}
               className="text-xl p-2 rounded-full hover:bg-base-100 hover:text-red-500"
             >
-              {isAudioEnabled ? <BsVolumeMute /> : <BsVolumeUp />}
+              {isAudioEnabled ? <BsVolumeUp /> : <BsVolumeMute />}
             </button>
           </li>
           <li className="tooltip" data-tip="Leave session">
