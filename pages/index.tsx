@@ -1,8 +1,20 @@
 import Head from "next/head";
-import Image from "next/image";
+import { useRouter } from "next/router";
+import { FormEvent, useState } from "react";
 import { BiLogIn } from "react-icons/bi";
+import { v4 } from "uuid";
 
 export default function Home() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+
+  const handleCreateSession = (e: FormEvent) => {
+    e.preventDefault();
+    if (username.length < 3)
+      return alert("Username must be longer than 2 characters");
+    router.push(`/session/${v4()}`);
+  };
+
   return (
     <div>
       <Head>
@@ -12,19 +24,20 @@ export default function Home() {
       </Head>
 
       <main className="h-screen flex flex-col justify-center items-center gap-16">
-        <h1 className="text-7xl text-primary">SESSION</h1>
-        <div className="form-control">
+        <h1 className="text-7xl text-primary">Create a session</h1>
+        <form onSubmit={handleCreateSession} className="form-control">
           <div className="input-group">
             <input
+              onChange={(e) => setUsername(e.target.value)}
               type="text"
               placeholder="Enter username"
               className="input input-bordered"
             />
-            <button className="btn btn-square text-xl">
+            <button type="submit" className="btn btn-square text-xl">
               <BiLogIn />
             </button>
           </div>
-        </div>
+        </form>
       </main>
     </div>
   );
