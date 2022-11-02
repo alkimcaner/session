@@ -36,21 +36,23 @@ export default function Home() {
             </button>
           </div>
         </div>
-        <div className="mockup-window border border-primary flex-1 w-3/4 h-full">
-          <div className="flex flex-col md:flex-row justify-center items-center gap-4 px-8 py-24 lg:py-32 border-t border-primary">
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-              <Image src="/assets/dog.jpg" alt="" fill />
-              <div className="absolute bottom-0 left-0 px-2 py-1 text-xs bg-base-100 bg-opacity-70 rounded-tr-xl">
-                good_boi_13
+        <div className="mockup-window border border-secondary flex-1 w-full sm:w-3/4 h-full">
+          <div className="flex flex-col gap-8 justify-center items-center p-4 border-t border-secondary">
+            <div className="w-full flex flex-col md:flex-row gap-4">
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <Image src="/assets/dog.jpg" alt="" fill />
+                <div className="absolute bottom-0 left-0 px-2 py-1 text-xs bg-base-100 bg-opacity-70 rounded-tr-xl">
+                  good_boi_13
+                </div>
+              </div>
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                <Image src="/assets/cat.jpg" alt="" fill />
+                <div className="absolute bottom-0 left-0 px-2 py-1 text-xs bg-base-100 bg-opacity-70 rounded-tr-xl">
+                  cutie_37
+                </div>
               </div>
             </div>
-            <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-              <Image src="/assets/cat.jpg" alt="" fill />
-              <div className="absolute bottom-0 left-0 px-2 py-1 text-xs bg-base-100 bg-opacity-70 rounded-tr-xl">
-                cutie_37
-              </div>
-            </div>
-            <div className="absolute bottom-2 bg-base-100 border border-primary p-2 rounded-xl flex gap-2">
+            <div className="bg-base-100 border border-secondary p-2 rounded-xl flex gap-2">
               <div className="p-2 rounded-full">
                 <BsClipboard />
               </div>

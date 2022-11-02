@@ -121,7 +121,7 @@ export default function Session() {
             <img src="/loading.svg" alt="loading" />
           )}
         </ul>
-        <ul className="fixed bottom-4 flex justify-center items-center gap-4 bg-base-100 border border-primary py-4 px-8 rounded-xl z-20 shadow-lg">
+        <ul className="fixed bottom-4 flex justify-center items-center gap-4 bg-base-100 border border-secondary py-4 px-8 rounded-xl z-20 shadow-lg">
           <li className="tooltip" data-tip={copyTooltip}>
             <button
               onClick={handleCopy}
