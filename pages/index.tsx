@@ -1,7 +1,11 @@
 import Head from "next/head";
+import Image from "next/image";
 import { useRouter } from "next/router";
 import { FormEvent } from "react";
 import { v4 } from "uuid";
+import Navbar from "../components/Navbar";
+import { BsCameraVideo, BsVolumeUp, BsClipboard } from "react-icons/bs";
+import { IoCallOutline } from "react-icons/io5";
 
 export default function Home() {
   const router = useRouter();
@@ -19,11 +23,49 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="h-screen flex flex-col justify-center items-center gap-16">
-        <h1 className="text-7xl text-primary">SESSION</h1>
-        <button onClick={handleCreateSession} className="btn btn-primary">
-          Create a session
-        </button>
+      <Navbar />
+
+      <main className="min-h-screen max-w-5xl mx-auto flex flex-col md:flex-row justify-center items-center gap-16 px-4 py-24">
+        <div className="flex-1 flex flex-col gap-16 justify-center">
+          <h1 className="text-6xl text-primary">
+            Peer-to-peer live video and chat sessions
+          </h1>
+          <div className="">
+            <button onClick={handleCreateSession} className="btn btn-primary">
+              Create a session
+            </button>
+          </div>
+        </div>
+        <div className="mockup-window border border-primary flex-1 w-3/4 h-full">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-4 px-8 py-24 lg:py-32 border-t border-primary">
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+              <Image src="/assets/dog.jpg" alt="" fill />
+              <div className="absolute bottom-0 left-0 px-2 py-1 text-xs bg-base-100 bg-opacity-70 rounded-tr-xl">
+                good_boi_13
+              </div>
+            </div>
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+              <Image src="/assets/cat.jpg" alt="" fill />
+              <div className="absolute bottom-0 left-0 px-2 py-1 text-xs bg-base-100 bg-opacity-70 rounded-tr-xl">
+                cutie_37
+              </div>
+            </div>
+            <div className="absolute bottom-2 bg-base-100 border border-primary p-2 rounded-xl flex gap-2">
+              <div className="p-2 rounded-full">
+                <BsClipboard />
+              </div>
+              <div className="p-2 rounded-full">
+                <BsCameraVideo />
+              </div>
+              <div className="p-2 rounded-full">
+                <BsVolumeUp />
+              </div>
+              <div className="p-2 rounded-full border border-primary text-primary">
+                <IoCallOutline />
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
     </div>
   );
