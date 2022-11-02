@@ -4,7 +4,7 @@ import { CgProfile } from "react-icons/cg";
 
 export default function Navbar() {
   return (
-    <nav className="fixed top-0 w-full flex justify-center bg-base-100 z-50 border-b border-primary">
+    <nav className="absolute top-0 w-full flex justify-center bg-base-100 z-50">
       <ul className="max-w-5xl flex-1 flex justify-center items-center gap-4 px-4 p-2">
         <li>
           <Link href="/" className="font-bold text-primary">

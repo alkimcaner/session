@@ -36,8 +36,8 @@ export default function Home() {
             </button>
           </div>
         </div>
-        <div className="mockup-window border border-secondary flex-1 w-full sm:w-3/4 h-full">
-          <div className="flex flex-col gap-8 justify-center items-center p-4 border-t border-secondary">
+        <div className="mockup-window border border-neutral flex-1 w-full sm:w-3/4 h-full select-none bg-base-300">
+          <div className="flex flex-col gap-8 justify-center items-center p-4 bg-base-200">
             <div className="w-full flex flex-col md:flex-row gap-4">
               <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                 <Image src="/assets/dog.jpg" alt="" fill />
@@ -52,7 +52,7 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="bg-base-100 border border-secondary p-2 rounded-xl flex gap-2">
+            <div className="bg-base-100 border border-neutral p-2 rounded-xl flex gap-2 text-xl">
               <div className="p-2 rounded-full">
                 <BsClipboard />
               </div>

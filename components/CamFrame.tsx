@@ -21,7 +21,7 @@ export default function CamFrame({
   useEffect(() => {
     if (!videoRef.current) return;
     videoRef.current.srcObject = stream;
-  }, [stream]);
+  }, []);
 
   return (
     <li className="relative w-96 aspect-video bg-base-300 rounded-xl overflow-hidden flex justify-center items-center shadow-lg">

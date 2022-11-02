@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import CamFrame from "../../components/CamFrame";
 import { IoCallOutline } from "react-icons/io5";
 import {
@@ -39,9 +39,7 @@ const connection = new RTCPeerConnection(servers);
 
 export default function Session() {
   const [localStream, setLocalStream] = useState<MediaStream>();
-  const [remoteStream, setRemoteStream] = useState<MediaStream>(
-    new MediaStream()
-  );
+  const [remoteStream, setRemoteStream] = useState<MediaStream>();
   const [copyTooltip, setCopyTooltip] = useState("Copy session link");
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
@@ -86,15 +84,6 @@ export default function Session() {
     };
 
     openMediaDevices();
-
-    return () => {
-      localStream?.getTracks().forEach((track) => {
-        track.stop();
-      });
-      remoteStream?.getTracks().forEach((track) => {
-        track.stop();
-      });
-    };
   }, []);
 
   return (
@@ -121,11 +110,11 @@ export default function Session() {
             <img src="/loading.svg" alt="loading" />
           )}
         </ul>
-        <ul className="fixed bottom-4 flex justify-center items-center gap-4 bg-base-100 border border-secondary py-4 px-8 rounded-xl z-20 shadow-lg">
+        <ul className="fixed bottom-4 flex justify-center items-center gap-4 bg-base-100 border border-neutral py-4 px-8 rounded-xl z-20 shadow-lg">
           <li className="tooltip" data-tip={copyTooltip}>
             <button
               onClick={handleCopy}
-              className="text-xl p-2 rounded-full hover:text-green-500"
+              className="text-xl p-2 rounded-full hover:text-secondary"
             >
               <BsClipboard />
             </button>
@@ -136,7 +125,7 @@ export default function Session() {
           >
             <button
               onClick={handleToggleVideo}
-              className="text-xl p-2 rounded-full hover:text-blue-500"
+              className="text-xl p-2 rounded-full hover:text-secondary"
             >
               {isVideoEnabled ? <BsCameraVideo /> : <BsCameraVideoOff />}
             </button>
@@ -149,7 +138,7 @@ export default function Session() {
           >
             <button
               onClick={handleToggleAudio}
-              className="text-xl p-2 rounded-full hover:text-red-500"
+              className="text-xl p-2 rounded-full hover:text-secondary"
             >
               {isAudioEnabled ? <BsVolumeUp /> : <BsVolumeMute />}
             </button>
