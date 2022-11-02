@@ -25,20 +25,25 @@ export default function Home() {
 
       <Navbar />
 
-      <main className="min-h-screen max-w-5xl mx-auto flex flex-col md:flex-row justify-center items-center gap-16 px-4 py-24">
-        <div className="flex-1 flex flex-col gap-16 justify-center">
-          <h1 className="text-6xl text-primary">
+      <main className="min-h-screen max-w-7xl mx-auto flex flex-col lg:flex-row justify-center items-center gap-16 p-4 pt-24">
+        <div className="flex flex-col gap-8 justify-center">
+          <h1 className="text-6xl text-secondary font-bold">
             Peer-to-peer live video and chat sessions
           </h1>
-          <div className="">
+          <p className="text-xl text-neutral-content">
+            Got tired of subscriptions? Chat with your friends without thinking
+            about montly plans. Session is free of charge. Until we go bankrupt.
+          </p>
+          <div className="flex items-center gap-2 w-fit">
             <button onClick={handleCreateSession} className="btn btn-primary">
-              Create a session
+              Get started
             </button>
+            <span className="text-primary text-xs">For free!</span>
           </div>
         </div>
-        <div className="mockup-window border border-neutral flex-1 w-full sm:w-3/4 h-full select-none bg-base-300">
-          <div className="flex flex-col gap-8 justify-center items-center p-4 bg-base-200">
-            <div className="w-full flex flex-col md:flex-row gap-4">
+        <div className="mockup-window border border-neutral w-full h-full select-none bg-base-300">
+          <div className="flex flex-col gap-16 justify-center items-center p-4 bg-base-200">
+            <div className="w-full flex flex-col sm:flex-row gap-4">
               <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                 <Image src="/assets/dog.jpg" alt="" fill />
                 <div className="absolute bottom-0 left-0 px-2 py-1 text-xs bg-base-100 bg-opacity-70 rounded-tr-xl">

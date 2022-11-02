@@ -5,17 +5,25 @@ import { CgProfile } from "react-icons/cg";
 export default function Navbar() {
   return (
     <nav className="absolute top-0 w-full flex justify-center bg-base-100 z-50">
-      <ul className="max-w-5xl flex-1 flex justify-center items-center gap-4 px-4 p-2">
+      <ul className="max-w-7xl flex-1 flex justify-center items-center gap-4 px-4 p-2">
         <li>
-          <Link href="/" className="font-bold text-primary">
+          <Link
+            href="/"
+            className="text-2xl font-extrabold text-secondary hover:text-secondary-focus"
+          >
             SESSION
           </Link>
         </li>
-        <li className="ml-auto link link-hover hover:link-primary">
-          <Link href="/sessions">My sessions</Link>
+        <li className="ml-auto">
+          <Link href="/dashboard" className="btn btn-outline btn-secondary">
+            Dashboard
+          </Link>
         </li>
         <li className="dropdown dropdown-end">
-          <label tabIndex={0} className="btn btn-ghost m-1 text-lg">
+          <label
+            tabIndex={0}
+            className="btn btn-primary btn-square m-1 text-lg"
+          >
             <CgProfile />
           </label>
           <ul
@@ -23,7 +31,7 @@ export default function Navbar() {
             className="dropdown-content menu p-2 shadow-lg bg-base-300 rounded-box w-52"
           >
             <li>
-              <a>Dashboard</a>
+              <a>Settings</a>
             </li>
             <li>
               <a>Sign out</a>
