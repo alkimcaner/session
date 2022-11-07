@@ -1,19 +1,13 @@
 import Head from "next/head";
 import Image from "next/image";
-import { useRouter } from "next/router";
-import { FormEvent } from "react";
-import { v4 } from "uuid";
 import Navbar from "../components/Navbar";
 import { BsCameraVideo, BsVolumeUp, BsClipboard } from "react-icons/bs";
 import { IoCallOutline } from "react-icons/io5";
+import { useUser } from "@supabase/auth-helpers-react";
+import Link from "next/link";
 
 export default function Home() {
-  const router = useRouter();
-
-  const handleCreateSession = (e: FormEvent) => {
-    e.preventDefault();
-    router.push(`/session/${v4()}`);
-  };
+  const user = useUser();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -35,9 +29,12 @@ export default function Home() {
             about montly plans. Session is free of charge. Until we go bankrupt.
           </p>
           <div className="flex items-center gap-2 w-fit">
-            <button onClick={handleCreateSession} className="btn btn-primary">
+            <Link
+              href={user ? "/sessions" : "/signin"}
+              className="btn btn-primary"
+            >
               Get started
-            </button>
+            </Link>
             <span className="text-primary text-xs">For free!</span>
           </div>
         </div>

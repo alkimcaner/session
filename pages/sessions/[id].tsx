@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import CamFrame from "../../components/CamFrame";
 import { IoCallOutline } from "react-icons/io5";
 import {
@@ -35,7 +35,7 @@ const servers: RTCConfiguration = {
   iceCandidatePoolSize: 10,
 };
 
-const connection = new RTCPeerConnection(servers);
+const peerConnection = new RTCPeerConnection(servers);
 
 export default function Session() {
   const [localStream, setLocalStream] = useState<MediaStream>();
@@ -76,9 +76,11 @@ export default function Session() {
       //Set local stream
       setLocalStream(stream);
       //Push tracks to connection
-      stream.getTracks().forEach((track) => connection.addTrack(track, stream));
+      stream
+        .getTracks()
+        .forEach((track) => peerConnection.addTrack(track, stream));
       //Set remote stream
-      connection.ontrack = (event) => {
+      peerConnection.ontrack = (event) => {
         setRemoteStream(event.streams[0]);
       };
     };
