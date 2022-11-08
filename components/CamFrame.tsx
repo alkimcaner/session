@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { BsCameraVideoOff, BsVolumeMute } from "react-icons/bs";
 
 interface IProps {
-  userName: string;
+  username: string;
   stream: MediaStream;
   isAudioEnabled: boolean;
   isVideoEnabled: boolean;
@@ -10,7 +10,7 @@ interface IProps {
 }
 
 export default function CamFrame({
-  userName,
+  username,
   stream,
   isAudioEnabled,
   isVideoEnabled,
@@ -45,7 +45,7 @@ export default function CamFrame({
             <BsVolumeMute />
           </span>
         )}
-        {userName}
+        {username}
       </div>
     </li>
   );

@@ -3,11 +3,25 @@ import Image from "next/image";
 import Navbar from "../components/Navbar";
 import { BsCameraVideo, BsVolumeUp, BsClipboard } from "react-icons/bs";
 import { IoCallOutline } from "react-icons/io5";
-import { useUser } from "@supabase/auth-helpers-react";
-import Link from "next/link";
+import { useRouter } from "next/router";
+import { useSupabaseClient } from "@supabase/auth-helpers-react";
+import { Database } from "../types/supabase";
 
 export default function Home() {
-  const user = useUser();
+  const supabase = useSupabaseClient<Database>();
+  const router = useRouter();
+
+  const handleCreateSession = async () => {
+    const { data, error } = await supabase
+      .from("sessions")
+      .insert({
+        caller_name: localStorage.getItem("username"),
+      })
+      .select()
+      .single();
+
+    router.push(`/session/${data?.session_id}`);
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -29,12 +43,9 @@ export default function Home() {
             about montly plans. Session is free of charge. Until we go bankrupt.
           </p>
           <div className="flex items-center gap-2 w-fit">
-            <Link
-              href={user ? "/sessions" : "/signin"}
-              className="btn btn-primary"
-            >
+            <button onClick={handleCreateSession} className="btn btn-primary">
               Get started
-            </Link>
+            </button>
             <span className="text-primary text-xs">For free!</span>
           </div>
         </div>
