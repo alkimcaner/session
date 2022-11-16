@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import Head from "next/head";
 import Navbar from "../../components/Navbar";
-import { useSupabaseClient, useUser } from "@supabase/auth-helpers-react";
+import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import { Database } from "../../types/supabase";
 
@@ -28,7 +28,9 @@ export default function Session() {
   const supabase = useSupabaseClient<Database>();
   const router = useRouter();
   const [localStream, setLocalStream] = useState<MediaStream>();
+  const localStreamRef = useRef<MediaStream>();
   const [remoteStream, setRemoteStream] = useState<MediaStream>();
+  const remoteStreamRef = useRef<MediaStream>();
   const [copyTooltip, setCopyTooltip] = useState("Copy session link");
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
@@ -58,17 +60,12 @@ export default function Session() {
   };
 
   useEffect(() => {
-    setUsername(localStorage.getItem("username") || "");
-    const pc = new RTCPeerConnection(servers);
-    //Debug connection
-    pc.addEventListener("connectionstatechange", (event) => {
-      if (pc.connectionState === "connected") {
-        console.log("CONNECTED");
-      }
-    });
+    let pc = new RTCPeerConnection(servers);
 
+    //Event handlers
     const handleOnTrack = (event: RTCTrackEvent) => {
       setRemoteStream(event.streams[0]);
+      remoteStreamRef.current = event.streams[0];
     };
 
     const handleOnIceCandidate = (event: RTCPeerConnectionIceEvent) => {
@@ -94,6 +91,16 @@ export default function Session() {
       }
     };
 
+    const handleDisconnect = () => {
+      if (
+        pc.connectionState === "closed" ||
+        pc.connectionState === "disconnected" ||
+        pc.connectionState === "failed"
+      ) {
+        router.push("/");
+      }
+    };
+
     const initSession = async () => {
       if (!router.query.id) return;
 
@@ -101,11 +108,16 @@ export default function Session() {
         video: true,
         audio: true,
       });
+
       setLocalStream(stream);
+      localStreamRef.current = stream;
 
+      //Push tracks to connection
       stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-
+      //Set remote tracks
       pc.addEventListener("track", handleOnTrack);
+      //Remove tracks on disconnect
+      pc.addEventListener("connectionstatechange", handleDisconnect);
 
       const { data, error } = await supabase
         .from("sessions")
@@ -138,7 +150,7 @@ export default function Session() {
               filter: `session_id=eq.${data.session_id}`,
             },
             (payload) => {
-              if (!pc.currentRemoteDescription && payload.new.answer) {
+              if (payload.new.answer) {
                 const answerDescription = new RTCSessionDescription(
                   payload.new.answer
                 );
@@ -194,14 +206,20 @@ export default function Session() {
           .subscribe();
       }
     };
+
+    setUsername(localStorage.getItem("username") || "");
     initSession();
 
     //Cleanup
     return () => {
-      pc.addEventListener("icecandidate", handleOnIceCandidate);
+      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+      remoteStreamRef.current?.getTracks().forEach((track) => track.stop());
+      pc.removeEventListener("icecandidate", handleOnIceCandidate);
       pc.removeEventListener("icegatheringstatechange", handleIceOffer);
       pc.removeEventListener("icegatheringstatechange", handleIceAnswer);
       pc.removeEventListener("track", handleOnTrack);
+      pc.removeEventListener("connectionstatechange", handleDisconnect);
+      pc.close();
     };
   }, [router]);
 
