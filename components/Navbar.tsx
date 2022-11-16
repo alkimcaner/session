@@ -6,7 +6,7 @@ export default function Navbar() {
       <div className="max-w-7xl flex-1 flex justify-center items-center gap-4 p-4">
         <Link
           href="/"
-          className="text-2xl font-extrabold text-secondary hover:text-secondary-focus"
+          className="text-2xl font-extrabold text-secondary hover:text-secondary-focus transition-colors"
         >
           SESSION
         </Link>

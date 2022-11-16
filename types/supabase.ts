@@ -11,6 +11,7 @@ export interface Database {
           session_id: string;
           offer_ice: string | null;
           answer_ice: string | null;
+          receiver_name: string | null;
         };
         Insert: {
           id?: number;
@@ -21,6 +22,7 @@ export interface Database {
           session_id?: string;
           offer_ice?: string | null;
           answer_ice?: string | null;
+          receiver_name?: string | null;
         };
         Update: {
           id?: number;
@@ -31,6 +33,7 @@ export interface Database {
           session_id?: string;
           offer_ice?: string | null;
           answer_ice?: string | null;
+          receiver_name?: string | null;
         };
       };
     };

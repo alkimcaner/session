@@ -34,8 +34,10 @@ export default function Session() {
   const [copyTooltip, setCopyTooltip] = useState("Copy session link");
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
-  const [username, setUsername] = useState("");
+  const [localName, setLocalName] = useState("");
+  const [remoteName, setRemoteName] = useState("");
   const candidates = useRef<RTCIceCandidate[]>([]);
+  const dcAudio = useRef<HTMLAudioElement>();
 
   const handleToggleAudio = () => {
     if (!localStream) return;
@@ -150,6 +152,9 @@ export default function Session() {
               filter: `session_id=eq.${data.session_id}`,
             },
             (payload) => {
+              //Set remote name
+              setRemoteName(payload.new.receiver_name);
+
               if (payload.new.answer) {
                 const answerDescription = new RTCSessionDescription(
                   payload.new.answer
@@ -169,6 +174,9 @@ export default function Session() {
       }
       //If user is receiver
       else {
+        //Set remote name
+        setRemoteName(data.caller_name || "");
+
         pc.addEventListener("icecandidate", handleOnIceCandidate);
         pc.addEventListener("icegatheringstatechange", handleIceAnswer);
         const offerDescription = new RTCSessionDescription(data.offer);
@@ -179,7 +187,10 @@ export default function Session() {
 
         await supabase
           .from("sessions")
-          .update({ answer: answerDescription })
+          .update({
+            answer: answerDescription,
+            receiver_name: localStorage.getItem("username"),
+          })
           .eq("session_id", data.session_id);
 
         supabase
@@ -207,7 +218,7 @@ export default function Session() {
       }
     };
 
-    setUsername(localStorage.getItem("username") || "");
+    setLocalName(localStorage.getItem("username") || "");
     initSession();
 
     //Cleanup
@@ -220,6 +231,8 @@ export default function Session() {
       pc.removeEventListener("track", handleOnTrack);
       pc.removeEventListener("connectionstatechange", handleDisconnect);
       pc.close();
+      dcAudio.current = new Audio("/assets/disconnect.mp3");
+      dcAudio.current.play();
     };
   }, [router]);
 
@@ -237,7 +250,7 @@ export default function Session() {
         <ul className="flex justify-center items-center flex-wrap gap-4">
           {localStream ? (
             <CamFrame
-              username={username}
+              username={localName}
               stream={localStream}
               isAudioEnabled={isAudioEnabled}
               isVideoEnabled={isVideoEnabled}
@@ -248,7 +261,7 @@ export default function Session() {
           )}
           {remoteStream && (
             <CamFrame
-              username={username}
+              username={remoteName}
               stream={remoteStream}
               isAudioEnabled={true}
               isVideoEnabled={true}
