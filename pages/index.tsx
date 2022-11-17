@@ -36,15 +36,16 @@ export default function Home() {
       <main className="flex-1 max-w-7xl mx-auto flex flex-col lg:flex-row justify-center items-center gap-16 p-4">
         <div className="flex flex-col gap-8 justify-center">
           <h1 className="text-6xl text-secondary font-bold">
-            Peer-to-peer live video and chat sessions
+            High quality video calls for ✨
+            <span className="text-yellow-400">free</span>✨
           </h1>
           <p className="text-xl text-neutral-content">
-            Got tired of subscriptions? Chat with your friends without thinking
-            about montly plans. Session is free of charge. Until we go bankrupt.
+            Got tired of subscriptions? Call your friends without thinking about
+            montly plans. Session is free of charge.
           </p>
           <div className="flex items-center gap-2 w-fit">
             <button onClick={handleCreateSession} className="btn btn-primary">
-              Get started
+              START A SESSION
             </button>
             <span className="text-primary text-xs">For free!</span>
           </div>

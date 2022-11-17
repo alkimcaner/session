@@ -5,8 +5,8 @@ export interface Database {
         Row: {
           id: number;
           created_at: string | null;
-          offer: any | null;
-          answer: any | null;
+          offer_sdp: any | null;
+          answer_sdp: any | null;
           caller_name: string | null;
           session_id: string;
           offer_ice: string | null;
@@ -16,8 +16,8 @@ export interface Database {
         Insert: {
           id?: number;
           created_at?: string | null;
-          offer?: any | null;
-          answer?: any | null;
+          offer_sdp?: any | null;
+          answer_sdp?: any | null;
           caller_name?: string | null;
           session_id?: string;
           offer_ice?: string | null;
@@ -27,8 +27,8 @@ export interface Database {
         Update: {
           id?: number;
           created_at?: string | null;
-          offer?: any | null;
-          answer?: any | null;
+          offer_sdp?: any | null;
+          answer_sdp?: any | null;
           caller_name?: string | null;
           session_id?: string;
           offer_ice?: string | null;

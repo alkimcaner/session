@@ -24,6 +24,12 @@ const servers: RTCConfiguration = {
   iceCandidatePoolSize: 10,
 };
 
+interface IPeerMeta {
+  isAudioEnabled: boolean;
+  isVideoEnabled: boolean;
+  isConnected: boolean;
+}
+
 export default function Session() {
   const supabase = useSupabaseClient<Database>();
   const router = useRouter();
@@ -38,11 +44,25 @@ export default function Session() {
   const [remoteName, setRemoteName] = useState("");
   const candidates = useRef<RTCIceCandidate[]>([]);
   const dcAudio = useRef<HTMLAudioElement>();
+  const [remoteMeta, setRemoteMeta] = useState<IPeerMeta>({
+    isAudioEnabled: true,
+    isVideoEnabled: true,
+    isConnected: true,
+  });
+  const pc = useRef<RTCPeerConnection>();
+  const dataChannel = useRef<RTCDataChannel>();
 
   const handleToggleAudio = () => {
     if (!localStream) return;
     setIsAudioEnabled((prev) => {
       localStream.getAudioTracks()[0].enabled = !prev;
+      dataChannel.current?.send(
+        JSON.stringify({
+          isAudioEnabled: !prev,
+          isVideoEnabled,
+          isConnected: true,
+        })
+      );
       return !prev;
     });
   };
@@ -51,6 +71,13 @@ export default function Session() {
     if (!localStream) return;
     setIsVideoEnabled((prev) => {
       localStream.getVideoTracks()[0].enabled = !prev;
+      dataChannel.current?.send(
+        JSON.stringify({
+          isAudioEnabled,
+          isVideoEnabled: !prev,
+          isConnected: true,
+        })
+      );
       return !prev;
     });
   };
@@ -62,21 +89,34 @@ export default function Session() {
   };
 
   useEffect(() => {
-    let pc = new RTCPeerConnection(servers);
+    //Initialize peer connection
+    pc.current = new RTCPeerConnection(servers);
 
     //Event handlers
-    const handleOnTrack = (event: RTCTrackEvent) => {
-      setRemoteStream(event.streams[0]);
-      remoteStreamRef.current = event.streams[0];
+    const handleOnDataChannel = (ev: RTCDataChannelEvent) => {
+      dataChannel.current = ev.channel;
+      dataChannel.current.addEventListener("message", handleOnMessage);
     };
 
-    const handleOnIceCandidate = (event: RTCPeerConnectionIceEvent) => {
-      if (!event.candidate) return;
-      candidates.current?.push(event.candidate);
+    const handleOnMessage = (ev: MessageEvent) => {
+      const data: IPeerMeta = JSON.parse(ev.data);
+      if (!data.isConnected) router.push("/");
+      setRemoteMeta(data);
+      console.log(data);
     };
 
-    const handleIceOffer = async (event: any) => {
-      if (pc.iceGatheringState === "complete") {
+    const handleOnTrack = (ev: RTCTrackEvent) => {
+      setRemoteStream(ev.streams[0]);
+      remoteStreamRef.current = ev.streams[0];
+    };
+
+    const handleOnIceCandidate = (ev: RTCPeerConnectionIceEvent) => {
+      if (!ev.candidate) return;
+      candidates.current?.push(ev.candidate);
+    };
+
+    const handleOnIceOffer = async () => {
+      if (pc.current?.iceGatheringState === "complete") {
         await supabase
           .from("sessions")
           .update({ offer_ice: JSON.stringify(candidates.current) })
@@ -84,8 +124,8 @@ export default function Session() {
       }
     };
 
-    const handleIceAnswer = async (event: any) => {
-      if (pc.iceGatheringState === "complete") {
+    const handleOnIceAnswer = async () => {
+      if (pc.current?.iceGatheringState === "complete") {
         await supabase
           .from("sessions")
           .update({ answer_ice: JSON.stringify(candidates.current) })
@@ -93,11 +133,11 @@ export default function Session() {
       }
     };
 
-    const handleDisconnect = () => {
+    const handleOnDisconnect = () => {
       if (
-        pc.connectionState === "closed" ||
-        pc.connectionState === "disconnected" ||
-        pc.connectionState === "failed"
+        pc.current?.connectionState === "closed" ||
+        pc.current?.connectionState === "disconnected" ||
+        pc.current?.connectionState === "failed"
       ) {
         router.push("/");
       }
@@ -115,11 +155,15 @@ export default function Session() {
       localStreamRef.current = stream;
 
       //Push tracks to connection
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+      stream
+        .getTracks()
+        .forEach((track) => pc.current?.addTrack(track, stream));
       //Set remote tracks
-      pc.addEventListener("track", handleOnTrack);
+      pc.current?.addEventListener("track", handleOnTrack);
       //Remove tracks on disconnect
-      pc.addEventListener("connectionstatechange", handleDisconnect);
+      pc.current?.addEventListener("connectionstatechange", handleOnDisconnect);
+      //Listen for data channel
+      pc.current?.addEventListener("datachannel", handleOnDataChannel);
 
       const { data, error } = await supabase
         .from("sessions")
@@ -131,14 +175,21 @@ export default function Session() {
 
       //If user is caller
       if (data.caller_name === localStorage.getItem("username")) {
-        pc.addEventListener("icecandidate", handleOnIceCandidate);
-        pc.addEventListener("icegatheringstatechange", handleIceOffer);
-        const offerDescription = await pc.createOffer();
-        await pc.setLocalDescription(offerDescription);
+        //Initialize data channel
+        dataChannel.current = pc.current?.createDataChannel("peer_meta");
+        dataChannel.current?.addEventListener("message", handleOnMessage);
+
+        pc.current?.addEventListener("icecandidate", handleOnIceCandidate);
+        pc.current?.addEventListener(
+          "icegatheringstatechange",
+          handleOnIceOffer
+        );
+        const offerDescription = await pc.current?.createOffer();
+        await pc.current?.setLocalDescription(offerDescription);
 
         await supabase
           .from("sessions")
-          .update({ offer: offerDescription })
+          .update({ offer_sdp: offerDescription })
           .eq("session_id", data.session_id);
 
         supabase
@@ -155,17 +206,17 @@ export default function Session() {
               //Set remote name
               setRemoteName(payload.new.receiver_name);
 
-              if (payload.new.answer) {
+              if (payload.new.answer_sdp) {
                 const answerDescription = new RTCSessionDescription(
-                  payload.new.answer
+                  payload.new.answer_sdp
                 );
-                pc.setRemoteDescription(answerDescription);
+                pc.current?.setRemoteDescription(answerDescription);
               } else if (payload.new.answer_ice) {
                 const answer_ice: RTCIceCandidate[] = JSON.parse(
                   payload.new.answer_ice
                 );
                 answer_ice.forEach((candidate) => {
-                  pc.addIceCandidate(candidate);
+                  pc.current?.addIceCandidate(candidate);
                 });
               }
             }
@@ -176,19 +227,22 @@ export default function Session() {
       else {
         //Set remote name
         setRemoteName(data.caller_name || "");
+        pc.current?.addEventListener("datachannel", handleOnDataChannel);
+        pc.current?.addEventListener("icecandidate", handleOnIceCandidate);
+        pc.current?.addEventListener(
+          "icegatheringstatechange",
+          handleOnIceAnswer
+        );
+        const offerDescription = new RTCSessionDescription(data.offer_sdp);
+        await pc.current?.setRemoteDescription(offerDescription);
 
-        pc.addEventListener("icecandidate", handleOnIceCandidate);
-        pc.addEventListener("icegatheringstatechange", handleIceAnswer);
-        const offerDescription = new RTCSessionDescription(data.offer);
-        await pc.setRemoteDescription(offerDescription);
-
-        const answerDescription = await pc.createAnswer();
-        await pc.setLocalDescription(answerDescription);
+        const answerDescription = await pc.current?.createAnswer();
+        await pc.current?.setLocalDescription(answerDescription);
 
         await supabase
           .from("sessions")
           .update({
-            answer: answerDescription,
+            answer_sdp: answerDescription,
             receiver_name: localStorage.getItem("username"),
           })
           .eq("session_id", data.session_id);
@@ -209,7 +263,7 @@ export default function Session() {
                   payload.new.offer_ice
                 );
                 offer_ice.forEach((candidate) => {
-                  pc.addIceCandidate(candidate);
+                  pc.current?.addIceCandidate(candidate);
                 });
               }
             }
@@ -219,20 +273,39 @@ export default function Session() {
     };
 
     setLocalName(localStorage.getItem("username") || "");
+    dcAudio.current = new Audio("/assets/disconnect.mp3");
     initSession();
 
     //Cleanup
     return () => {
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
       remoteStreamRef.current?.getTracks().forEach((track) => track.stop());
-      pc.removeEventListener("icecandidate", handleOnIceCandidate);
-      pc.removeEventListener("icegatheringstatechange", handleIceOffer);
-      pc.removeEventListener("icegatheringstatechange", handleIceAnswer);
-      pc.removeEventListener("track", handleOnTrack);
-      pc.removeEventListener("connectionstatechange", handleDisconnect);
-      pc.close();
-      dcAudio.current = new Audio("/assets/disconnect.mp3");
-      dcAudio.current.play();
+      pc.current?.removeEventListener("icecandidate", handleOnIceCandidate);
+      pc.current?.removeEventListener(
+        "icegatheringstatechange",
+        handleOnIceOffer
+      );
+      pc.current?.removeEventListener(
+        "icegatheringstatechange",
+        handleOnIceAnswer
+      );
+      pc.current?.removeEventListener("track", handleOnTrack);
+      pc.current?.removeEventListener(
+        "connectionstatechange",
+        handleOnDisconnect
+      );
+      pc.current?.removeEventListener("datachannel", handleOnDataChannel);
+      dataChannel.current?.removeEventListener("message", handleOnMessage);
+
+      if (dataChannel.current?.readyState === "open") {
+        dataChannel.current?.send(
+          JSON.stringify({ isAudioEnabled, isVideoEnabled, isConnected: false })
+        );
+      }
+
+      dataChannel.current?.close();
+      pc.current?.close();
+      dcAudio.current?.play();
     };
   }, [router]);
 
@@ -263,8 +336,8 @@ export default function Session() {
             <CamFrame
               username={remoteName}
               stream={remoteStream}
-              isAudioEnabled={true}
-              isVideoEnabled={true}
+              isAudioEnabled={remoteMeta.isAudioEnabled}
+              isVideoEnabled={remoteMeta.isVideoEnabled}
             />
           )}
         </ul>
