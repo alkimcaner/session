@@ -56,13 +56,15 @@ export default function Session() {
     if (!localStream) return;
     setIsAudioEnabled((prev) => {
       localStream.getAudioTracks()[0].enabled = !prev;
-      dataChannel.current?.send(
-        JSON.stringify({
-          isAudioEnabled: !prev,
-          isVideoEnabled,
-          isConnected: true,
-        })
-      );
+      if (dataChannel.current?.readyState === "open") {
+        dataChannel.current?.send(
+          JSON.stringify({
+            isAudioEnabled: !prev,
+            isVideoEnabled,
+            isConnected: true,
+          })
+        );
+      }
       return !prev;
     });
   };
@@ -71,13 +73,15 @@ export default function Session() {
     if (!localStream) return;
     setIsVideoEnabled((prev) => {
       localStream.getVideoTracks()[0].enabled = !prev;
-      dataChannel.current?.send(
-        JSON.stringify({
-          isAudioEnabled,
-          isVideoEnabled: !prev,
-          isConnected: true,
-        })
-      );
+      if (dataChannel.current?.readyState === "open") {
+        dataChannel.current?.send(
+          JSON.stringify({
+            isAudioEnabled,
+            isVideoEnabled: !prev,
+            isConnected: true,
+          })
+        );
+      }
       return !prev;
     });
   };
@@ -100,9 +104,13 @@ export default function Session() {
 
     const handleOnMessage = (ev: MessageEvent) => {
       const data: IPeerMeta = JSON.parse(ev.data);
-      if (!data.isConnected) router.push("/");
+      //Disconnect
+      if (!data.isConnected) {
+        dcAudio.current?.play();
+        router.push("/");
+      }
+
       setRemoteMeta(data);
-      console.log(data);
     };
 
     const handleOnTrack = (ev: RTCTrackEvent) => {
@@ -305,7 +313,6 @@ export default function Session() {
 
       dataChannel.current?.close();
       pc.current?.close();
-      dcAudio.current?.play();
     };
   }, [router]);
 
