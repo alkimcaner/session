@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import CamFrame from "../../components/CamFrame";
-import { IoCallOutline, IoSend } from "react-icons/io5";
+import { IoCallOutline } from "react-icons/io5";
 import {
   BsCameraVideo,
   BsCameraVideoOff,
@@ -120,7 +120,9 @@ export default function Session() {
 
   //Scroll chat
   useEffect(() => {
-    chatElementRef.current?.lastElementChild?.scrollIntoView();
+    chatElementRef.current?.lastElementChild?.scrollIntoView({
+      behavior: "smooth",
+    });
   }, [messages]);
 
   useEffect(() => {
@@ -402,8 +404,8 @@ export default function Session() {
           )}
         </ul>
         <div
-          className={`fixed right-4 bg-base-300 p-4 h-1/2 flex flex-col gap-4 rounded-xl shadow-lg ${
-            !isChatVisible && "hidden"
+          className={`fixed right-4 bg-base-300 p-4 h-1/2 flex flex-col gap-4 rounded-xl shadow-lg transition ease-in-out ${
+            !isChatVisible && "invisible translate-x-full"
           }`}
         >
           <ul ref={chatElementRef} className="flex-1 overflow-y-scroll">
