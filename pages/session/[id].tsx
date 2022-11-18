@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import CamFrame from "../../components/CamFrame";
-import { IoCallOutline } from "react-icons/io5";
+import { IoCallOutline, IoSend } from "react-icons/io5";
 import {
   BsCameraVideo,
   BsCameraVideoOff,
   BsVolumeUp,
   BsVolumeMute,
   BsClipboard,
+  BsChat,
 } from "react-icons/bs";
 import Link from "next/link";
 import Head from "next/head";
@@ -24,10 +25,15 @@ const servers: RTCConfiguration = {
   iceCandidatePoolSize: 10,
 };
 
-interface IPeerMeta {
+interface IPeerData {
   isAudioEnabled: boolean;
   isVideoEnabled: boolean;
   isConnected: boolean;
+}
+
+interface IChatMessage {
+  user: string;
+  message: string;
 }
 
 export default function Session() {
@@ -38,26 +44,31 @@ export default function Session() {
   const [remoteStream, setRemoteStream] = useState<MediaStream>();
   const remoteStreamRef = useRef<MediaStream>();
   const [copyTooltip, setCopyTooltip] = useState("Copy session link");
+  const [isChatVisible, setIsChatVisible] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [localName, setLocalName] = useState("");
   const [remoteName, setRemoteName] = useState("");
   const candidates = useRef<RTCIceCandidate[]>([]);
   const dcAudio = useRef<HTMLAudioElement>();
-  const [remoteMeta, setRemoteMeta] = useState<IPeerMeta>({
+  const [remotePeerData, setRemotePeerData] = useState<IPeerData>({
     isAudioEnabled: true,
     isVideoEnabled: true,
     isConnected: true,
   });
   const pc = useRef<RTCPeerConnection>();
-  const dataChannel = useRef<RTCDataChannel>();
+  const peerDataChannel = useRef<RTCDataChannel>();
+  const chatChannel = useRef<RTCDataChannel>();
+  const [messageInput, setMessageInput] = useState("");
+  const [messages, setMessages] = useState<IChatMessage[]>([]);
+  const chatElementRef = useRef<HTMLUListElement>(null);
 
   const handleToggleAudio = () => {
     if (!localStream) return;
     setIsAudioEnabled((prev) => {
       localStream.getAudioTracks()[0].enabled = !prev;
-      if (dataChannel.current?.readyState === "open") {
-        dataChannel.current?.send(
+      if (peerDataChannel.current?.readyState === "open") {
+        peerDataChannel.current?.send(
           JSON.stringify({
             isAudioEnabled: !prev,
             isVideoEnabled,
@@ -73,8 +84,8 @@ export default function Session() {
     if (!localStream) return;
     setIsVideoEnabled((prev) => {
       localStream.getVideoTracks()[0].enabled = !prev;
-      if (dataChannel.current?.readyState === "open") {
-        dataChannel.current?.send(
+      if (peerDataChannel.current?.readyState === "open") {
+        peerDataChannel.current?.send(
           JSON.stringify({
             isAudioEnabled,
             isVideoEnabled: !prev,
@@ -92,25 +103,58 @@ export default function Session() {
     setTimeout(() => setCopyTooltip("Copy session link"), 1000);
   };
 
+  const handleSendMessage = (ev: React.FormEvent<HTMLFormElement>) => {
+    ev.preventDefault();
+    if (peerDataChannel.current?.readyState !== "open" || messageInput === "")
+      return;
+
+    const message: IChatMessage = {
+      user: localName,
+      message: messageInput,
+    };
+
+    setMessageInput("");
+    setMessages((prev) => [...prev, message]);
+    chatChannel.current?.send(JSON.stringify(message));
+  };
+
+  //Scroll chat
+  useEffect(() => {
+    chatElementRef.current?.lastElementChild?.scrollIntoView();
+  }, [messages]);
+
   useEffect(() => {
     //Initialize peer connection
     pc.current = new RTCPeerConnection(servers);
 
     //Event handlers
     const handleOnDataChannel = (ev: RTCDataChannelEvent) => {
-      dataChannel.current = ev.channel;
-      dataChannel.current.addEventListener("message", handleOnMessage);
+      if (ev.channel.label === "peerData") {
+        peerDataChannel.current = ev.channel;
+        peerDataChannel.current.addEventListener(
+          "message",
+          handleOnPeerDataMessage
+        );
+      } else if (ev.channel.label === "chat") {
+        chatChannel.current = ev.channel;
+        chatChannel.current.addEventListener("message", handleOnChatMessage);
+      }
     };
 
-    const handleOnMessage = (ev: MessageEvent) => {
-      const data: IPeerMeta = JSON.parse(ev.data);
+    const handleOnPeerDataMessage = (ev: MessageEvent) => {
+      const data: IPeerData = JSON.parse(ev.data);
       //Disconnect
       if (!data.isConnected) {
         dcAudio.current?.play();
         router.push("/");
       }
 
-      setRemoteMeta(data);
+      setRemotePeerData(data);
+    };
+
+    const handleOnChatMessage = (ev: MessageEvent) => {
+      const data: IChatMessage = JSON.parse(ev.data);
+      setMessages((prev) => [...prev, data]);
     };
 
     const handleOnTrack = (ev: RTCTrackEvent) => {
@@ -183,9 +227,15 @@ export default function Session() {
 
       //If user is caller
       if (data.caller_name === localStorage.getItem("username")) {
-        //Initialize data channel
-        dataChannel.current = pc.current?.createDataChannel("peer_meta");
-        dataChannel.current?.addEventListener("message", handleOnMessage);
+        //Initialize peer data channel
+        peerDataChannel.current = pc.current?.createDataChannel("peerData");
+        peerDataChannel.current?.addEventListener(
+          "message",
+          handleOnPeerDataMessage
+        );
+        //Initialize chat channel
+        chatChannel.current = pc.current?.createDataChannel("chat");
+        chatChannel.current?.addEventListener("message", handleOnChatMessage);
 
         pc.current?.addEventListener("icecandidate", handleOnIceCandidate);
         pc.current?.addEventListener(
@@ -235,7 +285,6 @@ export default function Session() {
       else {
         //Set remote name
         setRemoteName(data.caller_name || "");
-        pc.current?.addEventListener("datachannel", handleOnDataChannel);
         pc.current?.addEventListener("icecandidate", handleOnIceCandidate);
         pc.current?.addEventListener(
           "icegatheringstatechange",
@@ -303,15 +352,19 @@ export default function Session() {
         handleOnDisconnect
       );
       pc.current?.removeEventListener("datachannel", handleOnDataChannel);
-      dataChannel.current?.removeEventListener("message", handleOnMessage);
+      peerDataChannel.current?.removeEventListener(
+        "message",
+        handleOnPeerDataMessage
+      );
+      chatChannel.current?.removeEventListener("message", handleOnChatMessage);
 
-      if (dataChannel.current?.readyState === "open") {
-        dataChannel.current?.send(
+      if (peerDataChannel.current?.readyState === "open") {
+        peerDataChannel.current?.send(
           JSON.stringify({ isAudioEnabled, isVideoEnabled, isConnected: false })
         );
       }
 
-      dataChannel.current?.close();
+      peerDataChannel.current?.close();
       pc.current?.close();
     };
   }, [router]);
@@ -326,7 +379,7 @@ export default function Session() {
 
       <Navbar />
 
-      <main className="flex-1 flex flex-col items-center justify-center gap-16">
+      <main className="flex-1 flex items-center justify-center gap-16">
         <ul className="flex justify-center items-center flex-wrap gap-4">
           {localStream ? (
             <CamFrame
@@ -343,11 +396,42 @@ export default function Session() {
             <CamFrame
               username={remoteName}
               stream={remoteStream}
-              isAudioEnabled={remoteMeta.isAudioEnabled}
-              isVideoEnabled={remoteMeta.isVideoEnabled}
+              isAudioEnabled={remotePeerData.isAudioEnabled}
+              isVideoEnabled={remotePeerData.isVideoEnabled}
             />
           )}
         </ul>
+        <div
+          className={`fixed right-4 bg-base-300 p-4 h-1/2 flex flex-col gap-4 rounded-xl shadow-lg ${
+            !isChatVisible && "hidden"
+          }`}
+        >
+          <ul ref={chatElementRef} className="flex-1 overflow-y-scroll">
+            {messages.map((message, idx) => (
+              <li key={idx}>
+                <b>{message.user}: </b>
+                {message.message}
+              </li>
+            ))}
+            <li></li>
+          </ul>
+          <form onSubmit={handleSendMessage} className="form-control">
+            <div className="input-group">
+              <input
+                type="text"
+                placeholder="Send a message"
+                className="input input-bordered"
+                value={messageInput}
+                onChange={(ev) => setMessageInput(ev.target.value)}
+              />
+              <input
+                type="submit"
+                value="Chat"
+                className="btn btn-square"
+              ></input>
+            </div>
+          </form>
+        </div>
         <ul className="fixed bottom-4 flex justify-center items-center gap-4 bg-base-100 border border-neutral py-4 px-8 rounded-xl z-20 shadow-lg">
           <li className="tooltip" data-tip={copyTooltip}>
             <button
@@ -355,6 +439,17 @@ export default function Session() {
               className="text-xl p-2 rounded-full hover:text-secondary"
             >
               <BsClipboard />
+            </button>
+          </li>
+          <li
+            className="tooltip"
+            data-tip={isChatVisible ? "Hide chat" : "Show chat"}
+          >
+            <button
+              onClick={() => setIsChatVisible((prev) => !prev)}
+              className="text-xl p-2 rounded-full hover:text-secondary"
+            >
+              <BsChat />
             </button>
           </li>
           <li
