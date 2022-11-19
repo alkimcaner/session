@@ -126,9 +126,6 @@ export default function Session() {
   }, [messages]);
 
   useEffect(() => {
-    //Initialize peer connection
-    pc.current = new RTCPeerConnection(servers);
-
     //Event handlers
     const handleOnDataChannel = (ev: RTCDataChannelEvent) => {
       if (ev.channel.label === "peerData") {
@@ -197,6 +194,15 @@ export default function Session() {
       }
     };
 
+    //Initialize peer connection
+    pc.current = new RTCPeerConnection(servers);
+    //Set remote tracks
+    pc.current?.addEventListener("track", handleOnTrack);
+    //Remove tracks on disconnect
+    pc.current?.addEventListener("connectionstatechange", handleOnDisconnect);
+    //Listen for data channel
+    pc.current?.addEventListener("datachannel", handleOnDataChannel);
+
     const initSession = async () => {
       if (!router.query.id) return;
 
@@ -212,12 +218,6 @@ export default function Session() {
       stream
         .getTracks()
         .forEach((track) => pc.current?.addTrack(track, stream));
-      //Set remote tracks
-      pc.current?.addEventListener("track", handleOnTrack);
-      //Remove tracks on disconnect
-      pc.current?.addEventListener("connectionstatechange", handleOnDisconnect);
-      //Listen for data channel
-      pc.current?.addEventListener("datachannel", handleOnDataChannel);
 
       const { data, error } = await supabase
         .from("sessions")
@@ -404,14 +404,17 @@ export default function Session() {
           )}
         </ul>
         <div
-          className={`fixed right-4 bg-base-300 p-4 h-1/2 flex flex-col gap-4 rounded-xl shadow-lg transition ease-in-out ${
-            !isChatVisible && "invisible translate-x-full"
+          className={`fixed right-4 bg-base-300 p-4 h-1/2 flex flex-col gap-4 rounded-xl shadow-lg transition-all ease-in-out ${
+            !isChatVisible && "invisible opacity-0 scale-95"
           }`}
         >
-          <ul ref={chatElementRef} className="flex-1 overflow-y-scroll">
+          <ul
+            ref={chatElementRef}
+            className="flex-1 scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-secondary"
+          >
             {messages.map((message, idx) => (
               <li key={idx}>
-                <b>{message.user}: </b>
+                <b className="text-primary">{message.user}: </b>
                 {message.message}
               </li>
             ))}
