@@ -24,7 +24,7 @@ export default function CamFrame({
   }, [stream]);
 
   return (
-    <li className="relative w-96 aspect-video bg-base-300 rounded-xl overflow-hidden flex justify-center items-center shadow-lg">
+    <li className="relative flex-1 aspect-video bg-base-300 rounded-xl overflow-hidden flex justify-center items-center shadow-lg">
       <video
         ref={videoRef}
         autoPlay
@@ -39,7 +39,7 @@ export default function CamFrame({
         </div>
       )}
 
-      <div className="absolute flex items-center gap-1 bottom-0 left-0 px-2 py-1 text-xs bg-base-100 bg-opacity-70 rounded-tr-xl">
+      <div className="absolute flex items-center gap-1 bottom-1 left-1 px-2 py-1 text-xs bg-black bg-opacity-50 rounded-lg">
         {!isAudioEnabled && (
           <span className="text-red-500 text-base">
             <BsVolumeMute />

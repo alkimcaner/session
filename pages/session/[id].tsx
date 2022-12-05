@@ -166,20 +166,11 @@ export default function Session() {
       candidates.current?.push(ev.candidate);
     };
 
-    const handleOnIceOffer = async () => {
+    const handleOnIceComplete = async () => {
       if (pc.current?.iceGatheringState === "complete") {
         await supabase
           .from("sessions")
-          .update({ offer_ice: JSON.stringify(candidates.current) })
-          .eq("session_id", router.query.id);
-      }
-    };
-
-    const handleOnIceAnswer = async () => {
-      if (pc.current?.iceGatheringState === "complete") {
-        await supabase
-          .from("sessions")
-          .update({ answer_ice: JSON.stringify(candidates.current) })
+          .update({ ice: candidates.current })
           .eq("session_id", router.query.id);
       }
     };
@@ -202,6 +193,8 @@ export default function Session() {
     pc.current?.addEventListener("connectionstatechange", handleOnDisconnect);
     //Listen for data channel
     pc.current?.addEventListener("datachannel", handleOnDataChannel);
+    //Push ice candidates to an array
+    pc.current?.addEventListener("icecandidate", handleOnIceCandidate);
 
     const initSession = async () => {
       if (!router.query.id) return;
@@ -227,8 +220,51 @@ export default function Session() {
 
       if (error) return;
 
-      //If user is caller
-      if (data.caller_name === localStorage.getItem("username")) {
+      //Answer
+      if (data.sdp?.type === "offer") {
+        //Set remote name
+        setRemoteName(data.caller_name || "");
+        pc.current?.addEventListener(
+          "icegatheringstatechange",
+          handleOnIceComplete
+        );
+        const offerDescription = new RTCSessionDescription(data.sdp);
+        await pc.current?.setRemoteDescription(offerDescription);
+
+        const answerDescription = await pc.current?.createAnswer();
+        await pc.current?.setLocalDescription(answerDescription);
+
+        await supabase
+          .from("sessions")
+          .update({
+            sdp: answerDescription,
+            receiver_name: localStorage.getItem("username"),
+          })
+          .eq("session_id", data.session_id);
+
+        supabase
+          .channel("public:sessions")
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "sessions",
+              filter: `session_id=eq.${data.session_id}`,
+            },
+            (payload) => {
+              if (payload.new.ice) {
+                const ice: RTCIceCandidate[] = payload.new.ice;
+                ice.forEach((candidate) => {
+                  pc.current?.addIceCandidate(candidate);
+                });
+              }
+            }
+          )
+          .subscribe();
+      }
+      //Offer
+      else {
         //Initialize peer data channel
         peerDataChannel.current = pc.current?.createDataChannel("peerData");
         peerDataChannel.current?.addEventListener(
@@ -239,17 +275,20 @@ export default function Session() {
         chatChannel.current = pc.current?.createDataChannel("chat");
         chatChannel.current?.addEventListener("message", handleOnChatMessage);
 
-        pc.current?.addEventListener("icecandidate", handleOnIceCandidate);
         pc.current?.addEventListener(
           "icegatheringstatechange",
-          handleOnIceOffer
+          handleOnIceComplete
         );
+
         const offerDescription = await pc.current?.createOffer();
         await pc.current?.setLocalDescription(offerDescription);
 
         await supabase
           .from("sessions")
-          .update({ offer_sdp: offerDescription })
+          .update({
+            sdp: offerDescription,
+            caller_name: localStorage.getItem("username"),
+          })
           .eq("session_id", data.session_id);
 
         supabase
@@ -266,62 +305,14 @@ export default function Session() {
               //Set remote name
               setRemoteName(payload.new.receiver_name);
 
-              if (payload.new.answer_sdp) {
+              if (payload.new.sdp) {
                 const answerDescription = new RTCSessionDescription(
-                  payload.new.answer_sdp
+                  payload.new.sdp
                 );
                 pc.current?.setRemoteDescription(answerDescription);
-              } else if (payload.new.answer_ice) {
-                const answer_ice: RTCIceCandidate[] = JSON.parse(
-                  payload.new.answer_ice
-                );
-                answer_ice.forEach((candidate) => {
-                  pc.current?.addIceCandidate(candidate);
-                });
-              }
-            }
-          )
-          .subscribe();
-      }
-      //If user is receiver
-      else {
-        //Set remote name
-        setRemoteName(data.caller_name || "");
-        pc.current?.addEventListener("icecandidate", handleOnIceCandidate);
-        pc.current?.addEventListener(
-          "icegatheringstatechange",
-          handleOnIceAnswer
-        );
-        const offerDescription = new RTCSessionDescription(data.offer_sdp);
-        await pc.current?.setRemoteDescription(offerDescription);
-
-        const answerDescription = await pc.current?.createAnswer();
-        await pc.current?.setLocalDescription(answerDescription);
-
-        await supabase
-          .from("sessions")
-          .update({
-            answer_sdp: answerDescription,
-            receiver_name: localStorage.getItem("username"),
-          })
-          .eq("session_id", data.session_id);
-
-        supabase
-          .channel("public:sessions")
-          .on(
-            "postgres_changes",
-            {
-              event: "UPDATE",
-              schema: "public",
-              table: "sessions",
-              filter: `session_id=eq.${data.session_id}`,
-            },
-            (payload) => {
-              if (payload.new.offer_ice) {
-                const offer_ice: RTCIceCandidate[] = JSON.parse(
-                  payload.new.offer_ice
-                );
-                offer_ice.forEach((candidate) => {
+              } else if (payload.new.ice) {
+                const ice: RTCIceCandidate[] = payload.new.ice;
+                ice.forEach((candidate) => {
                   pc.current?.addIceCandidate(candidate);
                 });
               }
@@ -342,11 +333,7 @@ export default function Session() {
       pc.current?.removeEventListener("icecandidate", handleOnIceCandidate);
       pc.current?.removeEventListener(
         "icegatheringstatechange",
-        handleOnIceOffer
-      );
-      pc.current?.removeEventListener(
-        "icegatheringstatechange",
-        handleOnIceAnswer
+        handleOnIceComplete
       );
       pc.current?.removeEventListener("track", handleOnTrack);
       pc.current?.removeEventListener(
@@ -381,8 +368,8 @@ export default function Session() {
 
       <Navbar />
 
-      <main className="flex-1 flex items-center justify-center gap-16">
-        <ul className="flex justify-center items-center flex-wrap gap-4">
+      <main className="flex-1 flex items-center justify-center gap-16 px-4">
+        <ul className="flex justify-center items-center flex-wrap flex-col sm:flex-row gap-4">
           {localStream ? (
             <CamFrame
               username={localName}
@@ -418,7 +405,6 @@ export default function Session() {
                 {message.message}
               </li>
             ))}
-            <li></li>
           </ul>
           <form onSubmit={handleSendMessage} className="form-control">
             <div className="input-group">
@@ -446,17 +432,19 @@ export default function Session() {
               <BsClipboard />
             </button>
           </li>
-          <li
-            className="tooltip"
-            data-tip={isChatVisible ? "Hide chat" : "Show chat"}
-          >
-            <button
-              onClick={() => setIsChatVisible((prev) => !prev)}
-              className="text-xl p-2 rounded-full hover:text-secondary"
+          {remoteStream && (
+            <li
+              className="tooltip"
+              data-tip={isChatVisible ? "Hide chat" : "Show chat"}
             >
-              <BsChat />
-            </button>
-          </li>
+              <button
+                onClick={() => setIsChatVisible((prev) => !prev)}
+                className="text-xl p-2 rounded-full hover:text-secondary"
+              >
+                <BsChat />
+              </button>
+            </li>
+          )}
           <li
             className="tooltip"
             data-tip={isVideoEnabled ? "Disable camera" : "Enable camera"}
