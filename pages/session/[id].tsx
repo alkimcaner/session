@@ -221,7 +221,10 @@ export default function Session() {
       if (error) return;
 
       //Answer
-      if (data.sdp?.type === "offer") {
+      if (
+        data.sdp?.type === "offer" &&
+        data.caller_name !== localStorage.getItem("username")
+      ) {
         //Set remote name
         setRemoteName(data.caller_name || "");
         pc.current?.addEventListener(
@@ -414,11 +417,13 @@ export default function Session() {
                 className="input input-bordered"
                 value={messageInput}
                 onChange={(ev) => setMessageInput(ev.target.value)}
+                disabled={!remoteStream}
               />
               <input
                 type="submit"
                 value="Chat"
                 className="btn btn-square"
+                disabled={!remoteStream}
               ></input>
             </div>
           </form>
@@ -432,19 +437,17 @@ export default function Session() {
               <BsClipboard />
             </button>
           </li>
-          {remoteStream && (
-            <li
-              className="tooltip"
-              data-tip={isChatVisible ? "Hide chat" : "Show chat"}
+          <li
+            className="tooltip"
+            data-tip={isChatVisible ? "Hide chat" : "Show chat"}
+          >
+            <button
+              onClick={() => setIsChatVisible((prev) => !prev)}
+              className="text-xl p-2 rounded-full hover:text-secondary"
             >
-              <button
-                onClick={() => setIsChatVisible((prev) => !prev)}
-                className="text-xl p-2 rounded-full hover:text-secondary"
-              >
-                <BsChat />
-              </button>
-            </li>
-          )}
+              <BsChat />
+            </button>
+          </li>
           <li
             className="tooltip"
             data-tip={isVideoEnabled ? "Disable camera" : "Enable camera"}
