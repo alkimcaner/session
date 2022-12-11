@@ -394,7 +394,7 @@ export default function Session() {
           )}
         </ul>
         <div
-          className={`fixed right-4 bg-base-300 p-4 h-1/2 flex flex-col gap-4 rounded-xl shadow-lg transition-all ease-in-out ${
+          className={`fixed right-4 bg-base-300 p-4 h-1/2 w-72 flex flex-col gap-4 rounded-xl shadow-lg transition-all ease-in-out ${
             !isChatVisible && "invisible opacity-0 scale-95"
           }`}
         >
@@ -403,7 +403,7 @@ export default function Session() {
             className="flex-1 scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-secondary"
           >
             {messages.map((message, idx) => (
-              <li key={idx}>
+              <li key={idx} className="break-words">
                 <b className="text-primary">{message.user}: </b>
                 {message.message}
               </li>
@@ -414,7 +414,7 @@ export default function Session() {
               <input
                 type="text"
                 placeholder="Send a message"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 value={messageInput}
                 onChange={(ev) => setMessageInput(ev.target.value)}
                 disabled={!remoteStream}
