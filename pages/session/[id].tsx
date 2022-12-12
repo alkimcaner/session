@@ -9,12 +9,14 @@ import {
   BsClipboard,
   BsChat,
 } from "react-icons/bs";
+import { MdFitScreen } from "react-icons/md";
 import Link from "next/link";
 import Head from "next/head";
 import Navbar from "../../components/Navbar";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import { Database } from "../../types/supabase";
+import { RealtimeChannel } from "@supabase/supabase-js";
 
 const servers: RTCConfiguration = {
   iceServers: [
@@ -47,6 +49,7 @@ export default function Session() {
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+  const [isScreenEnabled, setIsScreenEnabled] = useState(false);
   const [localName, setLocalName] = useState("");
   const [remoteName, setRemoteName] = useState("");
   const candidates = useRef<RTCIceCandidate[]>([]);
@@ -62,9 +65,42 @@ export default function Session() {
   const [messageInput, setMessageInput] = useState("");
   const [messages, setMessages] = useState<IChatMessage[]>([]);
   const chatElementRef = useRef<HTMLUListElement>(null);
+  const supabaseRealtime = useRef<RealtimeChannel>();
+
+  const handleShareScreen = async () => {
+    let stream;
+    if (!isScreenEnabled) {
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true,
+      });
+      setIsScreenEnabled(true);
+    } else {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      setIsScreenEnabled(false);
+    }
+
+    const track = stream.getVideoTracks()[0];
+
+    const sender = pc.current
+      ?.getSenders()
+      .find((s) => s.track?.kind === track.kind);
+    if (!sender) return;
+
+    setLocalStream(stream);
+    //Stop webcam
+    localStreamRef.current?.getTracks().forEach((track) => track.stop());
+    localStreamRef.current = stream;
+    //Replace tracks
+    sender.replaceTrack(track);
+    console.log(sender);
+  };
 
   const handleToggleAudio = () => {
-    if (!localStream) return;
+    if (!localStream || !localStream.getAudioTracks()[0]) return;
     setIsAudioEnabled((prev) => {
       localStream.getAudioTracks()[0].enabled = !prev;
       if (peerDataChannel.current?.readyState === "open") {
@@ -81,7 +117,7 @@ export default function Session() {
   };
 
   const handleToggleVideo = () => {
-    if (!localStream) return;
+    if (!localStream || !localStream.getVideoTracks()[0]) return;
     setIsVideoEnabled((prev) => {
       localStream.getVideoTracks()[0].enabled = !prev;
       if (peerDataChannel.current?.readyState === "open") {
@@ -245,7 +281,7 @@ export default function Session() {
           })
           .eq("session_id", data.session_id);
 
-        supabase
+        supabaseRealtime.current = supabase
           .channel("public:sessions")
           .on(
             "postgres_changes",
@@ -256,8 +292,8 @@ export default function Session() {
               filter: `session_id=eq.${data.session_id}`,
             },
             (payload) => {
-              if (payload.new.ice) {
-                const ice: RTCIceCandidate[] = payload.new.ice;
+              const ice: RTCIceCandidate[] = payload.new.ice;
+              if (ice?.length) {
                 ice.forEach((candidate) => {
                   pc.current?.addIceCandidate(candidate);
                 });
@@ -294,7 +330,7 @@ export default function Session() {
           })
           .eq("session_id", data.session_id);
 
-        supabase
+        supabaseRealtime.current = supabase
           .channel("public:sessions")
           .on(
             "postgres_changes",
@@ -313,8 +349,9 @@ export default function Session() {
                   payload.new.sdp
                 );
                 pc.current?.setRemoteDescription(answerDescription);
-              } else if (payload.new.ice) {
-                const ice: RTCIceCandidate[] = payload.new.ice;
+              }
+              const ice: RTCIceCandidate[] = payload.new.ice;
+              if (ice?.length) {
                 ice.forEach((candidate) => {
                   pc.current?.addIceCandidate(candidate);
                 });
@@ -356,7 +393,9 @@ export default function Session() {
         );
       }
 
+      supabaseRealtime.current?.unsubscribe();
       peerDataChannel.current?.close();
+      chatChannel.current?.close();
       pc.current?.close();
     };
   }, [router]);
@@ -372,7 +411,7 @@ export default function Session() {
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center gap-16 px-4">
-        <ul className="flex justify-center items-center flex-wrap flex-col sm:flex-row gap-4">
+        <ul className="flex flex-wrap justify-center items-center flex-col sm:flex-row gap-4">
           {localStream ? (
             <CamFrame
               username={localName}
@@ -446,6 +485,16 @@ export default function Session() {
               className="text-xl p-2 rounded-full hover:text-secondary"
             >
               <BsChat />
+            </button>
+          </li>
+          <li className="tooltip" data-tip={"Share screen"}>
+            <button
+              onClick={handleShareScreen}
+              className={`text-xl p-2 rounded-full hover:text-secondary ${
+                isScreenEnabled && "bg-primary"
+              }`}
+            >
+              <MdFitScreen />
             </button>
           </li>
           <li

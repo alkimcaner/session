@@ -31,6 +31,7 @@ export default function CamFrame({
         playsInline
         controls={false}
         muted={local ? true : !isAudioEnabled}
+        className="w-full"
       />
 
       {!isVideoEnabled && (
