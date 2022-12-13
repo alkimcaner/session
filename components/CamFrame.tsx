@@ -24,7 +24,7 @@ export default function CamFrame({
   }, [stream]);
 
   return (
-    <li className="relative flex-1 aspect-video bg-base-300 rounded-xl overflow-hidden flex justify-center items-center shadow-lg">
+    <li className="relative max-w-2xl flex-1 aspect-video bg-base-300 rounded-xl overflow-hidden flex justify-center items-center shadow-lg">
       <video
         ref={videoRef}
         autoPlay

@@ -68,35 +68,39 @@ export default function Session() {
   const supabaseRealtime = useRef<RealtimeChannel>();
 
   const handleShareScreen = async () => {
-    let stream;
-    if (!isScreenEnabled) {
-      stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-      });
-      setIsScreenEnabled(true);
-    } else {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-      setIsScreenEnabled(false);
+    try {
+      let stream;
+      if (!isScreenEnabled) {
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: true,
+          audio: true,
+        });
+        setIsScreenEnabled(true);
+      } else {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+        setIsScreenEnabled(false);
+      }
+
+      const track = stream.getVideoTracks()[0];
+
+      const sender = pc.current
+        ?.getSenders()
+        .find((s) => s.track?.kind === track.kind);
+      if (!sender) return;
+
+      setLocalStream(stream);
+      //Stop webcam
+      localStreamRef.current?.getTracks().forEach((track) => track.stop());
+      localStreamRef.current = stream;
+      //Replace tracks
+      sender.replaceTrack(track);
+    } catch (err) {
+      console.error(err);
+      return;
     }
-
-    const track = stream.getVideoTracks()[0];
-
-    const sender = pc.current
-      ?.getSenders()
-      .find((s) => s.track?.kind === track.kind);
-    if (!sender) return;
-
-    setLocalStream(stream);
-    //Stop webcam
-    localStreamRef.current?.getTracks().forEach((track) => track.stop());
-    localStreamRef.current = stream;
-    //Replace tracks
-    sender.replaceTrack(track);
-    console.log(sender);
   };
 
   const handleToggleAudio = () => {
@@ -134,9 +138,14 @@ export default function Session() {
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(window.location.href);
-    setCopyTooltip("Copied!");
-    setTimeout(() => setCopyTooltip("Copy session link"), 1000);
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopyTooltip("Copied!");
+      setTimeout(() => setCopyTooltip("Copy session link"), 1000);
+    } catch (err) {
+      console.error(err);
+      return;
+    }
   };
 
   const handleSendMessage = (ev: React.FormEvent<HTMLFormElement>) => {
@@ -202,16 +211,21 @@ export default function Session() {
       candidates.current?.push(ev.candidate);
     };
 
-    const handleOnIceComplete = async () => {
-      if (pc.current?.iceGatheringState === "complete") {
-        await supabase
-          .from("sessions")
-          .update({ ice: candidates.current })
-          .eq("session_id", router.query.id);
+    const handleOnIceGatheringStateChange = async () => {
+      try {
+        if (pc.current?.iceGatheringState === "complete") {
+          await supabase
+            .from("sessions")
+            .update({ ice: candidates.current })
+            .eq("session_id", router.query.id);
+        }
+      } catch (err) {
+        console.error(err);
+        return;
       }
     };
 
-    const handleOnDisconnect = () => {
+    const handleOnConnectionStateChange = () => {
       if (
         pc.current?.connectionState === "closed" ||
         pc.current?.connectionState === "disconnected" ||
@@ -225,140 +239,152 @@ export default function Session() {
     pc.current = new RTCPeerConnection(servers);
     //Set remote tracks
     pc.current?.addEventListener("track", handleOnTrack);
-    //Remove tracks on disconnect
-    pc.current?.addEventListener("connectionstatechange", handleOnDisconnect);
+    //Go to homepage on disconnect
+    pc.current?.addEventListener(
+      "connectionstatechange",
+      handleOnConnectionStateChange
+    );
     //Listen for data channel
     pc.current?.addEventListener("datachannel", handleOnDataChannel);
     //Push ice candidates to an array
     pc.current?.addEventListener("icecandidate", handleOnIceCandidate);
+    //Check if ice gathering is completed
+    pc.current?.addEventListener(
+      "icegatheringstatechange",
+      handleOnIceGatheringStateChange
+    );
 
     const initSession = async () => {
       if (!router.query.id) return;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
 
-      setLocalStream(stream);
-      localStreamRef.current = stream;
+        setLocalStream(stream);
+        localStreamRef.current = stream;
 
-      //Push tracks to connection
-      stream
-        .getTracks()
-        .forEach((track) => pc.current?.addTrack(track, stream));
+        //Push tracks to connection
+        stream
+          .getTracks()
+          .forEach((track) => pc.current?.addTrack(track, stream));
 
-      const { data, error } = await supabase
-        .from("sessions")
-        .select()
-        .eq("session_id", router.query.id)
-        .single();
-
-      if (error) return;
-
-      //Answer
-      if (
-        data.sdp?.type === "offer" &&
-        data.caller_name !== localStorage.getItem("username")
-      ) {
-        //Set remote name
-        setRemoteName(data.caller_name || "");
-        pc.current?.addEventListener(
-          "icegatheringstatechange",
-          handleOnIceComplete
-        );
-        const offerDescription = new RTCSessionDescription(data.sdp);
-        await pc.current?.setRemoteDescription(offerDescription);
-
-        const answerDescription = await pc.current?.createAnswer();
-        await pc.current?.setLocalDescription(answerDescription);
-
-        await supabase
+        const { data, error } = await supabase
           .from("sessions")
-          .update({
-            sdp: answerDescription,
-            receiver_name: localStorage.getItem("username"),
-          })
-          .eq("session_id", data.session_id);
+          .select()
+          .eq("session_id", router.query.id)
+          .single();
 
-        supabaseRealtime.current = supabase
-          .channel("public:sessions")
-          .on(
-            "postgres_changes",
-            {
-              event: "UPDATE",
-              schema: "public",
-              table: "sessions",
-              filter: `session_id=eq.${data.session_id}`,
-            },
-            (payload) => {
-              const ice: RTCIceCandidate[] = payload.new.ice;
-              if (ice?.length) {
-                ice.forEach((candidate) => {
-                  pc.current?.addIceCandidate(candidate);
-                });
+        if (error) return;
+
+        //Answer
+        if (
+          data.sdp?.type === "offer" &&
+          data.caller_name !== localStorage.getItem("username")
+        ) {
+          //Set remote name
+          setRemoteName(data.caller_name || "");
+
+          const offerDescription = new RTCSessionDescription(data.sdp);
+          await pc.current?.setRemoteDescription(offerDescription);
+
+          const answerDescription = await pc.current?.createAnswer();
+          await pc.current?.setLocalDescription(answerDescription);
+
+          await supabase
+            .from("sessions")
+            .update({
+              sdp: answerDescription,
+              receiver_name: localStorage.getItem("username"),
+            })
+            .eq("session_id", data.session_id);
+
+          supabaseRealtime.current = supabase
+            .channel("public:sessions")
+            .on(
+              "postgres_changes",
+              {
+                event: "UPDATE",
+                schema: "public",
+                table: "sessions",
+                filter: `session_id=eq.${data.session_id}`,
+              },
+              (payload) => {
+                const ice: RTCIceCandidate[] = payload.new.ice;
+                if (ice?.length) {
+                  ice.forEach((candidate) => {
+                    pc.current?.addIceCandidate(candidate);
+                  });
+                }
               }
+            )
+            .subscribe();
+
+          //Reload if caller is unavailable
+          setTimeout(() => {
+            if (pc.current?.connectionState !== "connected") {
+              router.reload();
             }
-          )
-          .subscribe();
-      }
-      //Offer
-      else {
-        //Initialize peer data channel
-        peerDataChannel.current = pc.current?.createDataChannel("peerData");
-        peerDataChannel.current?.addEventListener(
-          "message",
-          handleOnPeerDataMessage
-        );
-        //Initialize chat channel
-        chatChannel.current = pc.current?.createDataChannel("chat");
-        chatChannel.current?.addEventListener("message", handleOnChatMessage);
+          }, 2000);
+        }
+        //Offer
+        else {
+          //Initialize peer data channel
+          peerDataChannel.current = pc.current?.createDataChannel("peerData");
+          peerDataChannel.current?.addEventListener(
+            "message",
+            handleOnPeerDataMessage
+          );
+          //Initialize chat channel
+          chatChannel.current = pc.current?.createDataChannel("chat");
+          chatChannel.current?.addEventListener("message", handleOnChatMessage);
 
-        pc.current?.addEventListener(
-          "icegatheringstatechange",
-          handleOnIceComplete
-        );
+          const offerDescription = await pc.current?.createOffer();
+          await pc.current?.setLocalDescription(offerDescription);
 
-        const offerDescription = await pc.current?.createOffer();
-        await pc.current?.setLocalDescription(offerDescription);
+          await supabase
+            .from("sessions")
+            .update({
+              sdp: offerDescription,
+              caller_name: localStorage.getItem("username"),
+            })
+            .eq("session_id", data.session_id);
 
-        await supabase
-          .from("sessions")
-          .update({
-            sdp: offerDescription,
-            caller_name: localStorage.getItem("username"),
-          })
-          .eq("session_id", data.session_id);
+          supabaseRealtime.current = supabase
+            .channel("public:sessions")
+            .on(
+              "postgres_changes",
+              {
+                event: "UPDATE",
+                schema: "public",
+                table: "sessions",
+                filter: `session_id=eq.${data.session_id}`,
+              },
+              async (payload) => {
+                //Set remote name
+                setRemoteName(payload.new.receiver_name);
 
-        supabaseRealtime.current = supabase
-          .channel("public:sessions")
-          .on(
-            "postgres_changes",
-            {
-              event: "UPDATE",
-              schema: "public",
-              table: "sessions",
-              filter: `session_id=eq.${data.session_id}`,
-            },
-            (payload) => {
-              //Set remote name
-              setRemoteName(payload.new.receiver_name);
-
-              if (payload.new.sdp) {
-                const answerDescription = new RTCSessionDescription(
-                  payload.new.sdp
-                );
-                pc.current?.setRemoteDescription(answerDescription);
+                if (payload.new.sdp) {
+                  const answerDescription = new RTCSessionDescription(
+                    payload.new.sdp
+                  );
+                  await pc.current?.setRemoteDescription(answerDescription);
+                }
+                const ice: RTCIceCandidate[] = payload.new.ice;
+                if (ice?.length) {
+                  ice.forEach((candidate) => {
+                    pc.current?.addIceCandidate(candidate);
+                  });
+                }
               }
-              const ice: RTCIceCandidate[] = payload.new.ice;
-              if (ice?.length) {
-                ice.forEach((candidate) => {
-                  pc.current?.addIceCandidate(candidate);
-                });
-              }
-            }
-          )
-          .subscribe();
+            )
+            .subscribe();
+        }
+      } catch (err) {
+        console.error(err);
+        return;
       }
     };
 
@@ -373,12 +399,12 @@ export default function Session() {
       pc.current?.removeEventListener("icecandidate", handleOnIceCandidate);
       pc.current?.removeEventListener(
         "icegatheringstatechange",
-        handleOnIceComplete
+        handleOnIceGatheringStateChange
       );
       pc.current?.removeEventListener("track", handleOnTrack);
       pc.current?.removeEventListener(
         "connectionstatechange",
-        handleOnDisconnect
+        handleOnConnectionStateChange
       );
       pc.current?.removeEventListener("datachannel", handleOnDataChannel);
       peerDataChannel.current?.removeEventListener(
@@ -411,7 +437,7 @@ export default function Session() {
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center gap-16 px-4">
-        <ul className="flex flex-wrap justify-center items-center flex-col sm:flex-row gap-4">
+        <ul className="flex flex-wrap justify-center items-center flex-col sm:flex-row gap-4 w-full h-full">
           {localStream ? (
             <CamFrame
               username={localName}
