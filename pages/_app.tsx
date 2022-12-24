@@ -10,6 +10,9 @@ import {
   Config,
   uniqueNamesGenerator,
 } from "unique-names-generator";
+import { Provider } from "react-redux";
+import { store } from "../store";
+import { changeName } from "../slices/userSlice";
 
 const nameGenConfig: Config = {
   dictionaries: [adjectives, colors, animals],
@@ -25,17 +28,22 @@ export default function App({
   const [supabaseClient] = useState(() => createBrowserSupabaseClient());
 
   useEffect(() => {
-    const username = localStorage.getItem("username");
-    if (!username)
-      localStorage.setItem("username", uniqueNamesGenerator(nameGenConfig));
+    let username = localStorage.getItem("username");
+    if (!username) {
+      username = uniqueNamesGenerator(nameGenConfig);
+      localStorage.setItem("username", username);
+    }
+    store.dispatch(changeName(username));
   }, []);
 
   return (
-    <SessionContextProvider
-      supabaseClient={supabaseClient}
-      initialSession={pageProps.initialSession}
-    >
-      <Component {...pageProps} />
-    </SessionContextProvider>
+    <Provider store={store}>
+      <SessionContextProvider
+        supabaseClient={supabaseClient}
+        initialSession={pageProps.initialSession}
+      >
+        <Component {...pageProps} />
+      </SessionContextProvider>
+    </Provider>
   );
 }

@@ -17,6 +17,8 @@ import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import { Database } from "../../types/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../store";
 
 const servers: RTCConfiguration = {
   iceServers: [
@@ -50,7 +52,7 @@ export default function Session() {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isScreenEnabled, setIsScreenEnabled] = useState(false);
-  const [localName, setLocalName] = useState("");
+  const userState = useSelector((state: RootState) => state.user);
   const [remoteName, setRemoteName] = useState("");
   const candidates = useRef<RTCIceCandidate[]>([]);
   const dcAudio = useRef<HTMLAudioElement>();
@@ -154,7 +156,7 @@ export default function Session() {
       return;
 
     const message: IChatMessage = {
-      user: localName,
+      user: userState.name,
       message: messageInput,
     };
 
@@ -280,10 +282,7 @@ export default function Session() {
         if (error) return;
 
         //Answer
-        if (
-          data.sdp?.type === "offer" &&
-          data.caller_name !== localStorage.getItem("username")
-        ) {
+        if (data.sdp?.type === "offer" && data.caller_name !== userState.name) {
           //Set remote name
           setRemoteName(data.caller_name || "");
 
@@ -297,7 +296,7 @@ export default function Session() {
             .from("sessions")
             .update({
               sdp: answerDescription,
-              receiver_name: localStorage.getItem("username"),
+              receiver_name: userState.name,
             })
             .eq("session_id", data.session_id);
 
@@ -348,7 +347,7 @@ export default function Session() {
             .from("sessions")
             .update({
               sdp: offerDescription,
-              caller_name: localStorage.getItem("username"),
+              caller_name: userState.name,
             })
             .eq("session_id", data.session_id);
 
@@ -388,7 +387,6 @@ export default function Session() {
       }
     };
 
-    setLocalName(localStorage.getItem("username") || "");
     dcAudio.current = new Audio("/assets/disconnect.mp3");
     initSession();
 
@@ -440,7 +438,7 @@ export default function Session() {
         <ul className="flex flex-wrap justify-center items-center flex-col sm:flex-row gap-4 w-full h-full">
           {localStream ? (
             <CamFrame
-              username={localName}
+              username={userState.name}
               stream={localStream}
               isAudioEnabled={isAudioEnabled}
               isVideoEnabled={isVideoEnabled}
