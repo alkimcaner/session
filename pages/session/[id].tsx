@@ -1,24 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import CamFrame from "../../components/CamFrame";
-import { IoCallOutline } from "react-icons/io5";
-import {
-  BsCameraVideo,
-  BsCameraVideoOff,
-  BsVolumeUp,
-  BsVolumeMute,
-  BsClipboard,
-  BsChat,
-} from "react-icons/bs";
-import { MdFitScreen } from "react-icons/md";
-import Link from "next/link";
 import Head from "next/head";
 import Navbar from "../../components/Navbar";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import { Database } from "../../types/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../store";
+import {
+  setLocalStream,
+  setRemoteStream,
+  stopLocalStream,
+  stopRemoteStream,
+} from "../../slices/userSlice";
+import ActionBar from "../../components/ActionBar";
 
 const servers: RTCConfiguration = {
   iceServers: [
@@ -29,10 +25,11 @@ const servers: RTCConfiguration = {
   iceCandidatePoolSize: 10,
 };
 
-interface IPeerData {
+interface IRemoteMeta {
   isAudioEnabled: boolean;
   isVideoEnabled: boolean;
   isConnected: boolean;
+  name: string;
 }
 
 interface IChatMessage {
@@ -41,118 +38,29 @@ interface IChatMessage {
 }
 
 export default function Session() {
+  const userState = useSelector((state: RootState) => state.user);
+  const dispatch = useDispatch();
   const supabase = useSupabaseClient<Database>();
   const router = useRouter();
-  const [localStream, setLocalStream] = useState<MediaStream>();
-  const localStreamRef = useRef<MediaStream>();
-  const [remoteStream, setRemoteStream] = useState<MediaStream>();
-  const remoteStreamRef = useRef<MediaStream>();
-  const [copyTooltip, setCopyTooltip] = useState("Copy session link");
-  const [isChatVisible, setIsChatVisible] = useState(false);
-  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
-  const [isScreenEnabled, setIsScreenEnabled] = useState(false);
-  const userState = useSelector((state: RootState) => state.user);
-  const [remoteName, setRemoteName] = useState("");
   const candidates = useRef<RTCIceCandidate[]>([]);
   const dcAudio = useRef<HTMLAudioElement>();
-  const [remotePeerData, setRemotePeerData] = useState<IPeerData>({
+  const [remoteMeta, setRemoteMeta] = useState<IRemoteMeta>({
     isAudioEnabled: true,
     isVideoEnabled: true,
     isConnected: true,
+    name: "",
   });
   const pc = useRef<RTCPeerConnection>();
-  const peerDataChannel = useRef<RTCDataChannel>();
+  const metaChannel = useRef<RTCDataChannel>();
   const chatChannel = useRef<RTCDataChannel>();
   const [messageInput, setMessageInput] = useState("");
   const [messages, setMessages] = useState<IChatMessage[]>([]);
   const chatElementRef = useRef<HTMLUListElement>(null);
   const supabaseRealtime = useRef<RealtimeChannel>();
 
-  const handleShareScreen = async () => {
-    try {
-      let stream;
-      if (!isScreenEnabled) {
-        stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true,
-        });
-        setIsScreenEnabled(true);
-      } else {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
-        setIsScreenEnabled(false);
-      }
-
-      const track = stream.getVideoTracks()[0];
-
-      const sender = pc.current
-        ?.getSenders()
-        .find((s) => s.track?.kind === track.kind);
-      if (!sender) return;
-
-      setLocalStream(stream);
-      //Stop webcam
-      localStreamRef.current?.getTracks().forEach((track) => track.stop());
-      localStreamRef.current = stream;
-      //Replace tracks
-      sender.replaceTrack(track);
-    } catch (err) {
-      console.error(err);
-      return;
-    }
-  };
-
-  const handleToggleAudio = () => {
-    if (!localStream || !localStream.getAudioTracks()[0]) return;
-    setIsAudioEnabled((prev) => {
-      localStream.getAudioTracks()[0].enabled = !prev;
-      if (peerDataChannel.current?.readyState === "open") {
-        peerDataChannel.current?.send(
-          JSON.stringify({
-            isAudioEnabled: !prev,
-            isVideoEnabled,
-            isConnected: true,
-          })
-        );
-      }
-      return !prev;
-    });
-  };
-
-  const handleToggleVideo = () => {
-    if (!localStream || !localStream.getVideoTracks()[0]) return;
-    setIsVideoEnabled((prev) => {
-      localStream.getVideoTracks()[0].enabled = !prev;
-      if (peerDataChannel.current?.readyState === "open") {
-        peerDataChannel.current?.send(
-          JSON.stringify({
-            isAudioEnabled,
-            isVideoEnabled: !prev,
-            isConnected: true,
-          })
-        );
-      }
-      return !prev;
-    });
-  };
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopyTooltip("Copied!");
-      setTimeout(() => setCopyTooltip("Copy session link"), 1000);
-    } catch (err) {
-      console.error(err);
-      return;
-    }
-  };
-
   const handleSendMessage = (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault();
-    if (peerDataChannel.current?.readyState !== "open" || messageInput === "")
+    if (metaChannel.current?.readyState !== "open" || messageInput === "")
       return;
 
     const message: IChatMessage = {
@@ -172,30 +80,53 @@ export default function Session() {
     });
   }, [messages]);
 
+  //Send metadata changes
+  useEffect(() => {
+    if (metaChannel.current?.readyState === "open") {
+      metaChannel.current?.send(
+        JSON.stringify({
+          isAudioEnabled: userState.isAudioEnabled,
+          isVideoEnabled: userState.isVideoEnabled,
+          isConnected: true,
+          name: userState.name,
+        })
+      );
+    }
+  }, [userState.isVideoEnabled, userState.isAudioEnabled, userState.name]);
+
   useEffect(() => {
     //Event handlers
+    const handleOnMetaChannelReady = () => {
+      metaChannel.current?.send(
+        JSON.stringify({
+          isAudioEnabled: userState.isAudioEnabled,
+          isVideoEnabled: userState.isVideoEnabled,
+          isConnected: true,
+          name: userState.name,
+        })
+      );
+    };
+
     const handleOnDataChannel = (ev: RTCDataChannelEvent) => {
-      if (ev.channel.label === "peerData") {
-        peerDataChannel.current = ev.channel;
-        peerDataChannel.current.addEventListener(
-          "message",
-          handleOnPeerDataMessage
-        );
+      if (ev.channel.label === "meta") {
+        metaChannel.current = ev.channel;
+        metaChannel.current.addEventListener("message", handleOnMetaMessage);
+        metaChannel.current.addEventListener("open", handleOnMetaChannelReady);
       } else if (ev.channel.label === "chat") {
         chatChannel.current = ev.channel;
         chatChannel.current.addEventListener("message", handleOnChatMessage);
       }
     };
 
-    const handleOnPeerDataMessage = (ev: MessageEvent) => {
-      const data: IPeerData = JSON.parse(ev.data);
+    const handleOnMetaMessage = (ev: MessageEvent) => {
+      const data: IRemoteMeta = JSON.parse(ev.data);
       //Disconnect
       if (!data.isConnected) {
         dcAudio.current?.play();
         router.push("/");
       }
 
-      setRemotePeerData(data);
+      setRemoteMeta(data);
     };
 
     const handleOnChatMessage = (ev: MessageEvent) => {
@@ -204,8 +135,7 @@ export default function Session() {
     };
 
     const handleOnTrack = (ev: RTCTrackEvent) => {
-      setRemoteStream(ev.streams[0]);
-      remoteStreamRef.current = ev.streams[0];
+      dispatch(setRemoteStream(ev.streams[0]));
     };
 
     const handleOnIceCandidate = (ev: RTCPeerConnectionIceEvent) => {
@@ -265,8 +195,7 @@ export default function Session() {
           audio: true,
         });
 
-        setLocalStream(stream);
-        localStreamRef.current = stream;
+        dispatch(setLocalStream(stream));
 
         //Push tracks to connection
         stream
@@ -283,9 +212,6 @@ export default function Session() {
 
         //Answer
         if (data.sdp?.type === "offer" && data.caller_name !== userState.name) {
-          //Set remote name
-          setRemoteName(data.caller_name || "");
-
           const offerDescription = new RTCSessionDescription(data.sdp);
           await pc.current?.setRemoteDescription(offerDescription);
 
@@ -331,10 +257,11 @@ export default function Session() {
         //Offer
         else {
           //Initialize peer data channel
-          peerDataChannel.current = pc.current?.createDataChannel("peerData");
-          peerDataChannel.current?.addEventListener(
-            "message",
-            handleOnPeerDataMessage
+          metaChannel.current = pc.current?.createDataChannel("meta");
+          metaChannel.current?.addEventListener("message", handleOnMetaMessage);
+          metaChannel.current?.addEventListener(
+            "open",
+            handleOnMetaChannelReady
           );
           //Initialize chat channel
           chatChannel.current = pc.current?.createDataChannel("chat");
@@ -362,9 +289,6 @@ export default function Session() {
                 filter: `session_id=eq.${data.session_id}`,
               },
               async (payload) => {
-                //Set remote name
-                setRemoteName(payload.new.receiver_name);
-
                 if (payload.new.sdp) {
                   const answerDescription = new RTCSessionDescription(
                     payload.new.sdp
@@ -392,8 +316,8 @@ export default function Session() {
 
     //Cleanup
     return () => {
-      localStreamRef.current?.getTracks().forEach((track) => track.stop());
-      remoteStreamRef.current?.getTracks().forEach((track) => track.stop());
+      dispatch(stopLocalStream());
+      dispatch(stopRemoteStream());
       pc.current?.removeEventListener("icecandidate", handleOnIceCandidate);
       pc.current?.removeEventListener(
         "icegatheringstatechange",
@@ -405,20 +329,26 @@ export default function Session() {
         handleOnConnectionStateChange
       );
       pc.current?.removeEventListener("datachannel", handleOnDataChannel);
-      peerDataChannel.current?.removeEventListener(
-        "message",
-        handleOnPeerDataMessage
+      metaChannel.current?.removeEventListener("message", handleOnMetaMessage);
+      metaChannel.current?.removeEventListener(
+        "open",
+        handleOnMetaChannelReady
       );
       chatChannel.current?.removeEventListener("message", handleOnChatMessage);
 
-      if (peerDataChannel.current?.readyState === "open") {
-        peerDataChannel.current?.send(
-          JSON.stringify({ isAudioEnabled, isVideoEnabled, isConnected: false })
+      if (metaChannel.current?.readyState === "open") {
+        metaChannel.current?.send(
+          JSON.stringify({
+            isAudioEnabled: userState.isAudioEnabled,
+            isVideoEnabled: userState.isVideoEnabled,
+            isConnected: false,
+            name: userState.name,
+          })
         );
       }
 
       supabaseRealtime.current?.unsubscribe();
-      peerDataChannel.current?.close();
+      metaChannel.current?.close();
       chatChannel.current?.close();
       pc.current?.close();
     };
@@ -436,29 +366,29 @@ export default function Session() {
 
       <main className="flex-1 flex items-center justify-center gap-16 px-4">
         <ul className="flex flex-wrap justify-center items-center flex-col sm:flex-row gap-4 w-full h-full">
-          {localStream ? (
+          {userState.localStream ? (
             <CamFrame
               username={userState.name}
-              stream={localStream}
-              isAudioEnabled={isAudioEnabled}
-              isVideoEnabled={isVideoEnabled}
+              stream={userState.localStream}
+              isAudioEnabled={userState.isAudioEnabled}
+              isVideoEnabled={userState.isVideoEnabled}
               local
             />
           ) : (
             <img src="/loading.svg" alt="loading" />
           )}
-          {remoteStream && (
+          {userState.remoteStream && (
             <CamFrame
-              username={remoteName}
-              stream={remoteStream}
-              isAudioEnabled={remotePeerData.isAudioEnabled}
-              isVideoEnabled={remotePeerData.isVideoEnabled}
+              username={remoteMeta.name}
+              stream={userState.remoteStream}
+              isAudioEnabled={remoteMeta.isAudioEnabled}
+              isVideoEnabled={remoteMeta.isVideoEnabled}
             />
           )}
         </ul>
         <div
-          className={`fixed right-4 bg-base-300 p-4 h-1/2 w-72 flex flex-col gap-4 rounded-xl shadow-lg transition-all ease-in-out ${
-            !isChatVisible && "invisible opacity-0 scale-95"
+          className={`fixed right-4 bg-base-300 p-4 h-1/2 w-72 flex flex-col gap-4 rounded-xl shadow-lg border border-neutral transition-all ease-in-out ${
+            !userState.isChatVisible && "invisible opacity-0 scale-95"
           }`}
         >
           <ul
@@ -480,79 +410,18 @@ export default function Session() {
                 className="input input-bordered w-full"
                 value={messageInput}
                 onChange={(ev) => setMessageInput(ev.target.value)}
-                disabled={!remoteStream}
+                disabled={!userState.remoteStream}
               />
               <input
                 type="submit"
                 value="Chat"
                 className="btn btn-square"
-                disabled={!remoteStream}
+                disabled={!userState.remoteStream}
               ></input>
             </div>
           </form>
         </div>
-        <ul className="fixed bottom-4 flex justify-center items-center gap-4 bg-base-100 border border-neutral py-4 px-8 rounded-xl z-20 shadow-lg">
-          <li className="tooltip" data-tip={copyTooltip}>
-            <button
-              onClick={handleCopy}
-              className="text-xl p-2 rounded-full hover:text-secondary"
-            >
-              <BsClipboard />
-            </button>
-          </li>
-          <li
-            className="tooltip"
-            data-tip={isChatVisible ? "Hide chat" : "Show chat"}
-          >
-            <button
-              onClick={() => setIsChatVisible((prev) => !prev)}
-              className="text-xl p-2 rounded-full hover:text-secondary"
-            >
-              <BsChat />
-            </button>
-          </li>
-          <li className="tooltip" data-tip={"Share screen"}>
-            <button
-              onClick={handleShareScreen}
-              className={`text-xl p-2 rounded-full hover:text-secondary ${
-                isScreenEnabled && "bg-primary"
-              }`}
-            >
-              <MdFitScreen />
-            </button>
-          </li>
-          <li
-            className="tooltip"
-            data-tip={isVideoEnabled ? "Disable camera" : "Enable camera"}
-          >
-            <button
-              onClick={handleToggleVideo}
-              className="text-xl p-2 rounded-full hover:text-secondary"
-            >
-              {isVideoEnabled ? <BsCameraVideo /> : <BsCameraVideoOff />}
-            </button>
-          </li>
-          <li
-            className="tooltip"
-            data-tip={
-              isAudioEnabled ? "Disable microphone" : "Enable microphone"
-            }
-          >
-            <button
-              onClick={handleToggleAudio}
-              className="text-xl p-2 rounded-full hover:text-secondary"
-            >
-              {isAudioEnabled ? <BsVolumeUp /> : <BsVolumeMute />}
-            </button>
-          </li>
-          <li className="tooltip" data-tip="Leave session">
-            <Link href="/">
-              <div className="text-xl p-2 rounded-full border border-primary text-primary hover:bg-primary hover:text-base-100">
-                <IoCallOutline />
-              </div>
-            </Link>
-          </li>
-        </ul>
+        <ActionBar pc={pc} />
       </main>
     </div>
   );

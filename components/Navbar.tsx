@@ -5,7 +5,7 @@ import { FiEdit } from "react-icons/fi";
 import { TiTick } from "react-icons/ti";
 import { useState } from "react";
 import { useDispatch } from "react-redux";
-import { changeName } from "../slices/userSlice";
+import { setName } from "../slices/userSlice";
 
 export default function Navbar() {
   const userState = useSelector((state: RootState) => state.user);
@@ -27,9 +27,10 @@ export default function Navbar() {
               type="text"
               placeholder="Enter name"
               value={userState.name}
-              onChange={(e) => dispatch(changeName(e.target.value))}
+              onChange={(e) => dispatch(setName(e.target.value))}
               className="input input-primary w-full max-w-[8rem] text-center disabled:cursor-default"
               disabled={!isNameEditable}
+              required
             />
             <button
               onClick={() => setIsNameEditable((prev) => !prev)}

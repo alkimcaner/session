@@ -12,7 +12,7 @@ import {
 } from "unique-names-generator";
 import { Provider } from "react-redux";
 import { store } from "../store";
-import { changeName } from "../slices/userSlice";
+import { setName } from "../slices/userSlice";
 
 const nameGenConfig: Config = {
   dictionaries: [adjectives, colors, animals],
@@ -33,7 +33,7 @@ export default function App({
       username = uniqueNamesGenerator(nameGenConfig);
       localStorage.setItem("username", username);
     }
-    store.dispatch(changeName(username));
+    store.dispatch(setName(username));
   }, []);
 
   return (
