@@ -1,5 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
+import {
+  adjectives,
+  animals,
+  colors,
+  Config,
+  uniqueNamesGenerator,
+} from "unique-names-generator";
 
 export interface UserState {
   name: string;
@@ -21,13 +28,24 @@ const initialState: UserState = {
   isChatVisible: false,
 };
 
+const nameGenConfig: Config = {
+  dictionaries: [adjectives, colors, animals],
+  separator: " ",
+  length: 2,
+  style: "capital",
+};
+
 export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
     setName: (state, action: PayloadAction<string>) => {
-      localStorage.setItem("username", action.payload);
-      state.name = action.payload;
+      let name = action.payload;
+      if (!action.payload.length) {
+        name = uniqueNamesGenerator(nameGenConfig);
+      }
+      localStorage.setItem("username", name);
+      state.name = name;
     },
     setLocalStream: (state, action: PayloadAction<MediaStream>) => {
       state.localStream = action.payload;
