@@ -44,19 +44,19 @@ export default function Session() {
   const router = useRouter();
   const candidates = useRef<RTCIceCandidate[]>([]);
   const dcAudio = useRef<HTMLAudioElement>();
+  const pc = useRef<RTCPeerConnection>();
+  const metaChannel = useRef<RTCDataChannel>();
+  const chatChannel = useRef<RTCDataChannel>();
+  const supabaseRealtime = useRef<RealtimeChannel>();
+  const chatElementRef = useRef<HTMLUListElement>(null);
+  const [messageInput, setMessageInput] = useState("");
+  const [messages, setMessages] = useState<IChatMessage[]>([]);
   const [remoteMeta, setRemoteMeta] = useState<IRemoteMeta>({
     isAudioEnabled: true,
     isVideoEnabled: true,
     isConnected: true,
     name: "",
   });
-  const pc = useRef<RTCPeerConnection>();
-  const metaChannel = useRef<RTCDataChannel>();
-  const chatChannel = useRef<RTCDataChannel>();
-  const [messageInput, setMessageInput] = useState("");
-  const [messages, setMessages] = useState<IChatMessage[]>([]);
-  const chatElementRef = useRef<HTMLUListElement>(null);
-  const supabaseRealtime = useRef<RealtimeChannel>();
 
   const handleSendMessage = (ev: React.FormEvent<HTMLFormElement>) => {
     ev.preventDefault();

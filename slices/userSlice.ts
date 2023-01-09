@@ -8,6 +8,13 @@ import {
   uniqueNamesGenerator,
 } from "unique-names-generator";
 
+const nameGenConfig: Config = {
+  dictionaries: [adjectives, colors, animals],
+  separator: " ",
+  length: 2,
+  style: "capital",
+};
+
 export interface UserState {
   name: string;
   localStream: MediaStream | undefined;
@@ -26,13 +33,6 @@ const initialState: UserState = {
   isVideoEnabled: true,
   isScreenEnabled: false,
   isChatVisible: false,
-};
-
-const nameGenConfig: Config = {
-  dictionaries: [adjectives, colors, animals],
-  separator: " ",
-  length: 2,
-  style: "capital",
 };
 
 export const userSlice = createSlice({
