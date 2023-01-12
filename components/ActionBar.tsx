@@ -1,5 +1,5 @@
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   BsCameraVideo,
   BsCameraVideoOff,
@@ -12,7 +12,7 @@ import { MdFitScreen } from "react-icons/md";
 import { IoCallOutline } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  setIsScreenEnabled,
+  setIsScreenShareEnabled,
   setLocalStream,
   stopLocalStream,
   toggleAudio,
@@ -44,18 +44,18 @@ export default function ActionBar({ pc }: IProps) {
   const handleShareScreen = async () => {
     try {
       let stream;
-      if (!userState.isScreenEnabled) {
+      if (!userState.isScreenShareEnabled) {
         stream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
           audio: true,
         });
-        dispatch(setIsScreenEnabled(true));
+        dispatch(setIsScreenShareEnabled(true));
       } else {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
+          video: { deviceId: { ideal: userState.defaultVideoDeviceId } },
+          audio: { deviceId: { ideal: userState.defaultAudioDeviceId } },
         });
-        dispatch(setIsScreenEnabled(false));
+        dispatch(setIsScreenShareEnabled(false));
       }
 
       const track = stream.getVideoTracks()[0];
@@ -78,6 +78,47 @@ export default function ActionBar({ pc }: IProps) {
       return;
     }
   };
+
+  useEffect(() => {
+    const updateMediaDevice = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { ideal: userState.defaultVideoDeviceId } },
+          audio: { deviceId: { ideal: userState.defaultAudioDeviceId } },
+        });
+
+        const videoTrack = stream.getVideoTracks()[0];
+        const audioTrack = stream.getAudioTracks()[0];
+
+        const videoSender = pc.current
+          ?.getSenders()
+          .find((s) => s.track?.kind === videoTrack.kind);
+
+        const audioSender = pc.current
+          ?.getSenders()
+          .find((s) => s.track?.kind === audioTrack.kind);
+
+        if (!videoSender || !audioSender) return;
+
+        //Stop webcam
+        dispatch(stopLocalStream());
+
+        //Set stream
+        dispatch(setLocalStream(stream));
+
+        //Replace video track
+        videoSender.replaceTrack(videoTrack);
+
+        //Replace audio track
+        audioSender.replaceTrack(audioTrack);
+      } catch (err) {
+        console.error(err);
+        return;
+      }
+    };
+
+    updateMediaDevice();
+  }, [userState.defaultAudioDeviceId, userState.defaultVideoDeviceId]);
 
   return (
     <ul className="fixed bottom-4 flex justify-center items-center gap-4 bg-base-100 border border-neutral py-4 px-8 rounded-xl z-20 shadow-lg">
@@ -104,7 +145,7 @@ export default function ActionBar({ pc }: IProps) {
         <button
           onClick={handleShareScreen}
           className={`text-xl p-2 rounded-full hover:text-secondary ${
-            userState.isScreenEnabled && "bg-neutral-focus"
+            userState.isScreenShareEnabled && "bg-neutral-focus"
           }`}
         >
           <MdFitScreen />

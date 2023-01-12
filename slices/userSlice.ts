@@ -21,8 +21,11 @@ export interface UserState {
   remoteStream: MediaStream | undefined;
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
-  isScreenEnabled: boolean;
+  isScreenShareEnabled: boolean;
   isChatVisible: boolean;
+  isPermissionsGranted: boolean;
+  defaultAudioDeviceId: string;
+  defaultVideoDeviceId: string;
 }
 
 const initialState: UserState = {
@@ -31,8 +34,11 @@ const initialState: UserState = {
   remoteStream: undefined,
   isAudioEnabled: true,
   isVideoEnabled: true,
-  isScreenEnabled: false,
+  isScreenShareEnabled: false,
   isChatVisible: false,
+  isPermissionsGranted: false,
+  defaultAudioDeviceId: "default",
+  defaultVideoDeviceId: "default",
 };
 
 export const userSlice = createSlice({
@@ -72,8 +78,17 @@ export const userSlice = createSlice({
     toggleChat: (state) => {
       state.isChatVisible = !state.isChatVisible;
     },
-    setIsScreenEnabled: (state, action: PayloadAction<boolean>) => {
-      state.isScreenEnabled = action.payload;
+    setIsScreenShareEnabled: (state, action: PayloadAction<boolean>) => {
+      state.isScreenShareEnabled = action.payload;
+    },
+    setIsPermissionsGranted: (state, action: PayloadAction<boolean>) => {
+      state.isPermissionsGranted = action.payload;
+    },
+    setDefaultAudioDeviceId: (state, action: PayloadAction<string>) => {
+      state.defaultAudioDeviceId = action.payload;
+    },
+    setDefaultVideoDeviceId: (state, action: PayloadAction<string>) => {
+      state.defaultVideoDeviceId = action.payload;
     },
   },
 });
@@ -87,7 +102,10 @@ export const {
   toggleVideo,
   toggleAudio,
   toggleChat,
-  setIsScreenEnabled,
+  setIsScreenShareEnabled,
+  setIsPermissionsGranted,
+  setDefaultAudioDeviceId,
+  setDefaultVideoDeviceId,
 } = userSlice.actions;
 
 export default userSlice.reducer;

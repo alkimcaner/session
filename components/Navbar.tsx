@@ -5,13 +5,18 @@ import { FiEdit, FiSettings } from "react-icons/fi";
 import { TiTick } from "react-icons/ti";
 import { FormEvent, useRef, useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { setName } from "../slices/userSlice";
+import {
+  setDefaultAudioDeviceId,
+  setDefaultVideoDeviceId,
+  setIsPermissionsGranted,
+  setName,
+} from "../slices/userSlice";
 
 export default function Navbar() {
   const userState = useSelector((state: RootState) => state.user);
   const dispatch = useDispatch();
-  const [isNameEditable, setIsNameEditable] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isNameEditable, setIsNameEditable] = useState(false);
   const [audioDevices, setAudioDevices] = useState<InputDeviceInfo[]>();
   const [videoDevices, setVideoDevices] = useState<InputDeviceInfo[]>();
 
@@ -24,22 +29,81 @@ export default function Navbar() {
     setIsNameEditable((prev) => !prev);
   };
 
+  const handleGrantPermission = async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // Focus username input
   useEffect(() => {
     if (isNameEditable) {
       inputRef.current?.focus();
     }
   }, [isNameEditable]);
 
+  // Check permissions
+  useEffect(() => {
+    const handleOnPermissionChange = (ev: Event) => {
+      const target = ev.target as PermissionStatus;
+      if (target.state === "granted") {
+        dispatch(setIsPermissionsGranted(true));
+      } else {
+        dispatch(setIsPermissionsGranted(false));
+      }
+    };
+
+    let permission: PermissionStatus;
+
+    const checkPermission = async () => {
+      try {
+        const permissionName = "microphone" as PermissionName;
+        permission = await navigator.permissions.query({
+          name: permissionName,
+        });
+        // Initial permission check
+        if (permission.state === "granted") {
+          dispatch(setIsPermissionsGranted(true));
+        }
+        //On permission change event
+        permission.addEventListener("change", handleOnPermissionChange);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    checkPermission();
+
+    return () => {
+      permission.removeEventListener("change", handleOnPermissionChange);
+    };
+  }, []);
+
+  // Enumerate devices if permissions are granted
   useEffect(() => {
     const getDevices = async () => {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-
-      setVideoDevices(devices.filter((device) => device.kind === "videoinput"));
-      setAudioDevices(devices.filter((device) => device.kind === "audioinput"));
+      try {
+        if (userState.isPermissionsGranted) {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          setVideoDevices(
+            devices.filter((device) => device.kind === "videoinput")
+          );
+          setAudioDevices(
+            devices.filter((device) => device.kind === "audioinput")
+          );
+        }
+      } catch (error) {
+        console.error(error);
+      }
     };
 
     getDevices();
-  }, []);
+  }, [userState.isPermissionsGranted]);
 
   return (
     <nav className="w-full flex justify-center bg-base-100">
@@ -82,29 +146,63 @@ export default function Navbar() {
             </div>
             <div className="flex justify-between items-center py-4">
               <span>Theme</span>
-              <select className="select select-bordered select-sm w-full max-w-[16rem]">
+              <select className="select select-bordered select-sm w-full max-w-[10rem]">
                 <option>Dark</option>
                 <option>Light</option>
               </select>
             </div>
             <div className="flex justify-between items-center py-4">
               <span>Default Microphone</span>
-              <select className="select select-bordered select-sm w-full max-w-[16rem]">
-                {audioDevices?.map((device, index) => (
-                  <option key={index}>{device.label}</option>
-                ))}
-              </select>
+              {userState.isPermissionsGranted ? (
+                <select
+                  value={userState.defaultAudioDeviceId}
+                  onChange={(ev) =>
+                    dispatch(setDefaultAudioDeviceId(ev.target.value))
+                  }
+                  className="select select-bordered select-sm w-full max-w-[16rem]"
+                >
+                  {audioDevices?.map((device, index) => (
+                    <option key={index} value={device.deviceId}>
+                      {device.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <button
+                  onClick={handleGrantPermission}
+                  className="btn btn-sm btn-warning"
+                >
+                  Permissions required
+                </button>
+              )}
             </div>
             <div className="flex justify-between items-center py-4">
               <span>Default Camera</span>
-              <select className="select select-bordered select-sm w-full max-w-[16rem]">
-                {videoDevices?.map((device, index) => (
-                  <option key={index}>{device.label}</option>
-                ))}
-              </select>
+              {userState.isPermissionsGranted ? (
+                <select
+                  value={userState.defaultVideoDeviceId}
+                  onChange={(ev) =>
+                    dispatch(setDefaultVideoDeviceId(ev.target.value))
+                  }
+                  className="select select-bordered select-sm w-full max-w-[16rem]"
+                >
+                  {videoDevices?.map((device, index) => (
+                    <option key={index} value={device.deviceId}>
+                      {device.label}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <button
+                  onClick={handleGrantPermission}
+                  className="btn btn-sm btn-warning"
+                >
+                  Permissions required
+                </button>
+              )}
             </div>
             <div className="flex justify-between items-center py-4">
-              <span>Mirror camera</span>
+              <span>Mirror Camera</span>
               <input type="checkbox" className="toggle toggle-primary" />
             </div>
           </label>

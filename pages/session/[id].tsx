@@ -191,8 +191,8 @@ export default function Session() {
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
+          video: { deviceId: { ideal: userState.defaultVideoDeviceId } },
+          audio: { deviceId: { ideal: userState.defaultAudioDeviceId } },
         });
 
         dispatch(setLocalStream(stream));
