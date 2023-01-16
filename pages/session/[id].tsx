@@ -9,6 +9,7 @@ import { RealtimeChannel } from "@supabase/supabase-js";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../store";
 import {
+  setIsScreenShareEnabled,
   setLocalStream,
   setRemoteStream,
   stopLocalStream,
@@ -47,7 +48,7 @@ export default function Session() {
   const pc = useRef<RTCPeerConnection>();
   const metaChannel = useRef<RTCDataChannel>();
   const chatChannel = useRef<RTCDataChannel>();
-  const supabaseRealtime = useRef<RealtimeChannel>();
+  const rtEvent = useRef<RealtimeChannel>();
   const chatElementRef = useRef<HTMLUListElement>(null);
   const [messageInput, setMessageInput] = useState("");
   const [messages, setMessages] = useState<IChatMessage[]>([]);
@@ -226,7 +227,7 @@ export default function Session() {
             })
             .eq("session_id", data.session_id);
 
-          supabaseRealtime.current = supabase
+          rtEvent.current = supabase
             .channel("public:sessions")
             .on(
               "postgres_changes",
@@ -278,7 +279,7 @@ export default function Session() {
             })
             .eq("session_id", data.session_id);
 
-          supabaseRealtime.current = supabase
+          rtEvent.current = supabase
             .channel("public:sessions")
             .on(
               "postgres_changes",
@@ -318,6 +319,10 @@ export default function Session() {
     return () => {
       dispatch(stopLocalStream());
       dispatch(stopRemoteStream());
+      dispatch(setLocalStream(undefined));
+      dispatch(setRemoteStream(undefined));
+      dispatch(setIsScreenShareEnabled(false));
+
       pc.current?.removeEventListener("icecandidate", handleOnIceCandidate);
       pc.current?.removeEventListener(
         "icegatheringstatechange",
@@ -347,7 +352,7 @@ export default function Session() {
         );
       }
 
-      supabaseRealtime.current?.unsubscribe();
+      rtEvent.current?.unsubscribe();
       metaChannel.current?.close();
       chatChannel.current?.close();
       pc.current?.close();

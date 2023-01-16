@@ -53,10 +53,13 @@ export const userSlice = createSlice({
       localStorage.setItem("username", name);
       state.name = name;
     },
-    setLocalStream: (state, action: PayloadAction<MediaStream>) => {
+    setLocalStream: (state, action: PayloadAction<MediaStream | undefined>) => {
       state.localStream = action.payload;
     },
-    setRemoteStream: (state, action: PayloadAction<MediaStream>) => {
+    setRemoteStream: (
+      state,
+      action: PayloadAction<MediaStream | undefined>
+    ) => {
       state.remoteStream = action.payload;
     },
     stopLocalStream: (state) => {
