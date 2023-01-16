@@ -38,7 +38,7 @@ const initialState: UserState = {
   isChatVisible: false,
   isPermissionsGranted: false,
   defaultAudioDeviceId: "default",
-  defaultVideoDeviceId: "default",
+  defaultVideoDeviceId: "",
 };
 
 export const userSlice = createSlice({

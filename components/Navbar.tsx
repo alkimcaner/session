@@ -88,14 +88,20 @@ export default function Navbar() {
   useEffect(() => {
     const getDevices = async () => {
       try {
-        if (userState.isPermissionsGranted) {
-          const devices = await navigator.mediaDevices.enumerateDevices();
-          setVideoDevices(
-            devices.filter((device) => device.kind === "videoinput")
-          );
-          setAudioDevices(
-            devices.filter((device) => device.kind === "audioinput")
-          );
+        if (!userState.isPermissionsGranted) return;
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioDevices = devices.filter(
+          (device) => device.kind === "audioinput"
+        );
+        const videoDevices = devices.filter(
+          (device) => device.kind === "videoinput"
+        );
+        setAudioDevices(audioDevices);
+        setVideoDevices(videoDevices);
+
+        //Set default state if empty
+        if (!userState.defaultVideoDeviceId.length) {
+          dispatch(setDefaultVideoDeviceId(videoDevices[0].deviceId));
         }
       } catch (error) {
         console.error(error);
@@ -146,7 +152,7 @@ export default function Navbar() {
             </div>
             <div className="flex justify-between items-center py-4">
               <span>Theme</span>
-              <select className="select select-bordered select-sm w-full max-w-[10rem]">
+              <select className="select select-bordered select-sm w-full max-w-[12rem]">
                 <option>Dark</option>
                 <option>Light</option>
               </select>
@@ -159,7 +165,7 @@ export default function Navbar() {
                   onChange={(ev) =>
                     dispatch(setDefaultAudioDeviceId(ev.target.value))
                   }
-                  className="select select-bordered select-sm w-full max-w-[16rem]"
+                  className="select select-bordered select-sm w-full max-w-[12rem]"
                 >
                   {audioDevices?.map((device, index) => (
                     <option key={index} value={device.deviceId}>
@@ -184,7 +190,7 @@ export default function Navbar() {
                   onChange={(ev) =>
                     dispatch(setDefaultVideoDeviceId(ev.target.value))
                   }
-                  className="select select-bordered select-sm w-full max-w-[16rem]"
+                  className="select select-bordered select-sm w-full max-w-[12rem]"
                 >
                   {videoDevices?.map((device, index) => (
                     <option key={index} value={device.deviceId}>
