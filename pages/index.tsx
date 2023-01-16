@@ -54,13 +54,25 @@ export default function Home() {
           <div className="flex flex-col gap-16 justify-center items-center p-4 bg-base-200">
             <div className="w-full flex flex-col sm:flex-row gap-4">
               <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-                <Image src="/assets/dog.jpg" alt="" fill />
+                <Image
+                  src="/assets/dog.jpg"
+                  alt=""
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 33vw, 80vw"
+                />
                 <div className="absolute bottom-0 left-0 px-2 py-1 text-xs bg-base-100 bg-opacity-70 rounded-tr-xl">
                   good_boi_13
                 </div>
               </div>
               <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-                <Image src="/assets/cat.jpg" alt="" fill />
+                <Image
+                  src="/assets/cat.jpg"
+                  alt=""
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 33vw, 80vw"
+                />
                 <div className="absolute bottom-0 left-0 px-2 py-1 text-xs bg-base-100 bg-opacity-70 rounded-tr-xl">
                   cutie_37
                 </div>

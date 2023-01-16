@@ -5,7 +5,13 @@ import { SessionContextProvider, Session } from "@supabase/auth-helpers-react";
 import { useEffect, useState } from "react";
 import { Provider } from "react-redux";
 import { store } from "../store";
-import { setName } from "../slices/userSlice";
+import {
+  setDefaultAudioDeviceId,
+  setDefaultVideoDeviceId,
+  setIsCameraMirrored,
+  setName,
+  setTheme,
+} from "../slices/userSlice";
 
 export default function App({
   Component,
@@ -16,6 +22,19 @@ export default function App({
   useEffect(() => {
     const username = localStorage.getItem("username");
     store.dispatch(setName(username || ""));
+
+    const isCameraMirrored =
+      localStorage.getItem("isCameraMirrored") === "true";
+    store.dispatch(setIsCameraMirrored(isCameraMirrored));
+
+    const defaultVideoDeviceId = localStorage.getItem("defaultVideoDeviceId");
+    store.dispatch(setDefaultVideoDeviceId(defaultVideoDeviceId || ""));
+
+    const defaultAudioDeviceId = localStorage.getItem("defaultAudioDeviceId");
+    store.dispatch(setDefaultAudioDeviceId(defaultAudioDeviceId || "default"));
+
+    const theme = localStorage.getItem("theme");
+    store.dispatch(setTheme(theme || "dark"));
   }, []);
 
   return (

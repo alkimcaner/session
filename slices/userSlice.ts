@@ -26,19 +26,23 @@ export interface UserState {
   isPermissionsGranted: boolean;
   defaultAudioDeviceId: string;
   defaultVideoDeviceId: string;
+  isCameraMirrored: boolean;
+  theme: string;
 }
 
 const initialState: UserState = {
   name: "",
   localStream: undefined,
   remoteStream: undefined,
-  isAudioEnabled: true,
   isVideoEnabled: true,
+  isAudioEnabled: true,
   isScreenShareEnabled: false,
   isChatVisible: false,
   isPermissionsGranted: false,
   defaultAudioDeviceId: "default",
   defaultVideoDeviceId: "",
+  isCameraMirrored: false,
+  theme: "",
 };
 
 export const userSlice = createSlice({
@@ -88,10 +92,20 @@ export const userSlice = createSlice({
       state.isPermissionsGranted = action.payload;
     },
     setDefaultAudioDeviceId: (state, action: PayloadAction<string>) => {
+      localStorage.setItem("defaultAudioDeviceId", action.payload);
       state.defaultAudioDeviceId = action.payload;
     },
     setDefaultVideoDeviceId: (state, action: PayloadAction<string>) => {
+      localStorage.setItem("defaultVideoDeviceId", action.payload);
       state.defaultVideoDeviceId = action.payload;
+    },
+    setIsCameraMirrored: (state, action: PayloadAction<boolean>) => {
+      localStorage.setItem("isCameraMirrored", action.payload.toString());
+      state.isCameraMirrored = action.payload;
+    },
+    setTheme: (state, action: PayloadAction<string>) => {
+      localStorage.setItem("theme", action.payload);
+      state.theme = action.payload;
     },
   },
 });
@@ -109,6 +123,8 @@ export const {
   setIsPermissionsGranted,
   setDefaultAudioDeviceId,
   setDefaultVideoDeviceId,
+  setIsCameraMirrored,
+  setTheme,
 } = userSlice.actions;
 
 export default userSlice.reducer;

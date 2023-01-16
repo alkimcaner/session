@@ -8,8 +8,10 @@ import { useDispatch } from "react-redux";
 import {
   setDefaultAudioDeviceId,
   setDefaultVideoDeviceId,
+  setIsCameraMirrored,
   setIsPermissionsGranted,
   setName,
+  setTheme,
 } from "../slices/userSlice";
 
 export default function Navbar() {
@@ -152,7 +154,11 @@ export default function Navbar() {
             </div>
             <div className="flex justify-between items-center py-4">
               <span>Theme</span>
-              <select className="select select-bordered select-sm w-full max-w-[12rem]">
+              <select
+                value={userState.theme}
+                onChange={(ev) => dispatch(setTheme(ev.target.value))}
+                className="select select-bordered select-sm w-full max-w-[12rem]"
+              >
                 <option>Dark</option>
                 <option>Light</option>
               </select>
@@ -209,7 +215,14 @@ export default function Navbar() {
             </div>
             <div className="flex justify-between items-center py-4">
               <span>Mirror Camera</span>
-              <input type="checkbox" className="toggle toggle-primary" />
+              <input
+                type="checkbox"
+                className="toggle toggle-primary"
+                checked={userState.isCameraMirrored}
+                onChange={(ev) =>
+                  dispatch(setIsCameraMirrored(ev.target.checked))
+                }
+              />
             </div>
           </label>
         </label>
