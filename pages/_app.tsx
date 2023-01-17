@@ -34,7 +34,7 @@ export default function App({
     store.dispatch(setDefaultAudioDeviceId(defaultAudioDeviceId || "default"));
 
     const theme = localStorage.getItem("theme");
-    store.dispatch(setTheme(theme || "dark"));
+    store.dispatch(setTheme(theme || ""));
   }, []);
 
   return (

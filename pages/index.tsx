@@ -39,7 +39,7 @@ export default function Home() {
             High quality video calls for ✨
             <span className="text-yellow-400">free</span>✨
           </h1>
-          <p className="text-xl text-neutral-content">
+          <p className="text-xl text-base-content">
             Got tired of subscriptions? Call your friends without thinking about
             montly plans. Session is free of charge.
           </p>

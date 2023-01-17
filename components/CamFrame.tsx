@@ -40,7 +40,7 @@ export default function CamFrame({
         </div>
       )}
 
-      <div className="absolute flex items-center gap-1 bottom-1 left-1 px-2 py-1 text-xs bg-black bg-opacity-50 rounded-lg">
+      <div className="absolute flex items-center gap-1 bottom-1 left-1 px-2 py-1 text-xs text-white bg-black bg-opacity-50 rounded-lg">
         {!isAudioEnabled && (
           <span className="text-red-500 text-base">
             <BsVolumeMute />
