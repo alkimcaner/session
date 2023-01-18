@@ -29,6 +29,7 @@ const servers: RTCConfiguration = {
 interface IRemoteMeta {
   isAudioEnabled: boolean;
   isVideoEnabled: boolean;
+  isCameraMirrored: boolean;
   isConnected: boolean;
   name: string;
 }
@@ -55,6 +56,7 @@ export default function Session() {
   const [remoteMeta, setRemoteMeta] = useState<IRemoteMeta>({
     isAudioEnabled: true,
     isVideoEnabled: true,
+    isCameraMirrored: false,
     isConnected: true,
     name: "",
   });
@@ -88,12 +90,18 @@ export default function Session() {
         JSON.stringify({
           isAudioEnabled: userState.isAudioEnabled,
           isVideoEnabled: userState.isVideoEnabled,
+          isCameraMirrored: userState.isCameraMirrored,
           isConnected: true,
           name: userState.name,
         })
       );
     }
-  }, [userState.isVideoEnabled, userState.isAudioEnabled, userState.name]);
+  }, [
+    userState.isVideoEnabled,
+    userState.isAudioEnabled,
+    userState.name,
+    userState.isCameraMirrored,
+  ]);
 
   useEffect(() => {
     //Event handlers
@@ -102,6 +110,7 @@ export default function Session() {
         JSON.stringify({
           isAudioEnabled: userState.isAudioEnabled,
           isVideoEnabled: userState.isVideoEnabled,
+          isCameraMirrored: userState.isCameraMirrored,
           isConnected: true,
           name: userState.name,
         })
@@ -346,6 +355,7 @@ export default function Session() {
           JSON.stringify({
             isAudioEnabled: userState.isAudioEnabled,
             isVideoEnabled: userState.isVideoEnabled,
+            isCameraMirrored: userState.isCameraMirrored,
             isConnected: false,
             name: userState.name,
           })
@@ -377,6 +387,7 @@ export default function Session() {
               stream={userState.localStream}
               isAudioEnabled={userState.isAudioEnabled}
               isVideoEnabled={userState.isVideoEnabled}
+              mirror={userState.isCameraMirrored}
               local
             />
           ) : (
@@ -388,6 +399,7 @@ export default function Session() {
               stream={userState.remoteStream}
               isAudioEnabled={remoteMeta.isAudioEnabled}
               isVideoEnabled={remoteMeta.isVideoEnabled}
+              mirror={remoteMeta.isCameraMirrored}
             />
           )}
         </ul>

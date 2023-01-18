@@ -6,6 +6,7 @@ interface IProps {
   stream: MediaStream;
   isAudioEnabled: boolean;
   isVideoEnabled: boolean;
+  mirror: boolean;
   local?: boolean;
 }
 
@@ -14,6 +15,7 @@ export default function CamFrame({
   stream,
   isAudioEnabled,
   isVideoEnabled,
+  mirror,
   local,
 }: IProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -31,11 +33,11 @@ export default function CamFrame({
         playsInline
         controls={false}
         muted={local ? true : !isAudioEnabled}
-        className="w-full"
+        className={`w-full ${mirror && "-scale-x-100"}`}
       />
 
       {!isVideoEnabled && (
-        <div className="text-2xl absolute">
+        <div className="text-2xl text-white absolute">
           <BsCameraVideoOff />
         </div>
       )}

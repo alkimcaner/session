@@ -65,7 +65,7 @@ export default function ActionBar({ pc }: IProps) {
         .find((s) => s.track?.kind === track.kind);
       if (!sender) return;
 
-      //Stop webcam
+      //Stop stream
       dispatch(stopLocalStream());
 
       //Set stream
@@ -79,6 +79,7 @@ export default function ActionBar({ pc }: IProps) {
     }
   };
 
+  //Change default device
   useEffect(() => {
     const updateMediaDevice = async () => {
       try {
@@ -100,11 +101,14 @@ export default function ActionBar({ pc }: IProps) {
 
         if (!videoSender || !audioSender) return;
 
-        //Stop webcam
+        //Stop stream
         dispatch(stopLocalStream());
 
         //Set stream
         dispatch(setLocalStream(stream));
+
+        //Disable screen share
+        dispatch(setIsScreenShareEnabled(false));
 
         //Replace video track
         videoSender.replaceTrack(videoTrack);
