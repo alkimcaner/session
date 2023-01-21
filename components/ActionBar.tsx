@@ -37,7 +37,6 @@ export default function ActionBar({ pc }: IProps) {
       setTimeout(() => setCopyTooltip("Copy session link"), 1000);
     } catch (err) {
       console.error(err);
-      return;
     }
   };
 
@@ -75,7 +74,6 @@ export default function ActionBar({ pc }: IProps) {
       sender.replaceTrack(track);
     } catch (err) {
       console.error(err);
-      return;
     }
   };
 
@@ -117,7 +115,6 @@ export default function ActionBar({ pc }: IProps) {
         audioSender.replaceTrack(audioTrack);
       } catch (err) {
         console.error(err);
-        return;
       }
     };
 

@@ -105,7 +105,7 @@ export default function Session() {
 
   useEffect(() => {
     //Event handlers
-    const handleOnMetaChannelReady = () => {
+    const handleOnMetaChannelOpen = () => {
       metaChannel.current?.send(
         JSON.stringify({
           isAudioEnabled: userState.isAudioEnabled,
@@ -121,7 +121,7 @@ export default function Session() {
       if (ev.channel.label === "meta") {
         metaChannel.current = ev.channel;
         metaChannel.current.addEventListener("message", handleOnMetaMessage);
-        metaChannel.current.addEventListener("open", handleOnMetaChannelReady);
+        metaChannel.current.addEventListener("open", handleOnMetaChannelOpen);
       } else if (ev.channel.label === "chat") {
         chatChannel.current = ev.channel;
         chatChannel.current.addEventListener("message", handleOnChatMessage);
@@ -163,7 +163,6 @@ export default function Session() {
         }
       } catch (err) {
         console.error(err);
-        return;
       }
     };
 
@@ -248,11 +247,10 @@ export default function Session() {
               },
               (payload) => {
                 const ice: RTCIceCandidate[] = payload.new.ice;
-                if (ice?.length) {
-                  ice.forEach((candidate) => {
-                    pc.current?.addIceCandidate(candidate);
-                  });
-                }
+
+                ice?.forEach((candidate) => {
+                  pc.current?.addIceCandidate(candidate);
+                });
               }
             )
             .subscribe();
@@ -271,7 +269,7 @@ export default function Session() {
           metaChannel.current?.addEventListener("message", handleOnMetaMessage);
           metaChannel.current?.addEventListener(
             "open",
-            handleOnMetaChannelReady
+            handleOnMetaChannelOpen
           );
           //Initialize chat channel
           chatChannel.current = pc.current?.createDataChannel("chat");
@@ -299,25 +297,26 @@ export default function Session() {
                 filter: `session_id=eq.${data.session_id}`,
               },
               async (payload) => {
-                if (payload.new.sdp) {
-                  const answerDescription = new RTCSessionDescription(
-                    payload.new.sdp
-                  );
-                  await pc.current?.setRemoteDescription(answerDescription);
-                }
+                if (!payload.new.sdp || payload.new.sdp.type !== "answer")
+                  return;
+
+                const answerDescription = new RTCSessionDescription(
+                  payload.new.sdp
+                );
+
+                await pc.current?.setRemoteDescription(answerDescription);
+
                 const ice: RTCIceCandidate[] = payload.new.ice;
-                if (ice?.length) {
-                  ice.forEach((candidate) => {
-                    pc.current?.addIceCandidate(candidate);
-                  });
-                }
+
+                ice?.forEach((candidate) => {
+                  pc.current?.addIceCandidate(candidate);
+                });
               }
             )
             .subscribe();
         }
       } catch (err) {
         console.error(err);
-        return;
       }
     };
 
@@ -344,10 +343,7 @@ export default function Session() {
       );
       pc.current?.removeEventListener("datachannel", handleOnDataChannel);
       metaChannel.current?.removeEventListener("message", handleOnMetaMessage);
-      metaChannel.current?.removeEventListener(
-        "open",
-        handleOnMetaChannelReady
-      );
+      metaChannel.current?.removeEventListener("open", handleOnMetaChannelOpen);
       chatChannel.current?.removeEventListener("message", handleOnChatMessage);
 
       if (metaChannel.current?.readyState === "open") {
