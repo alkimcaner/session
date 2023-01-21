@@ -3,31 +3,31 @@ export interface Database {
     Tables: {
       sessions: {
         Row: {
-          id: number;
-          created_at: string | null;
-          sdp: any | null;
           caller_name: string | null;
-          session_id: string;
+          created_at: string | null;
+          ice: any | null;
+          id: number;
           receiver_name: string | null;
-          ice: any[] | null;
+          sdp: any | null;
+          session_id: string;
         };
         Insert: {
-          id?: number;
-          created_at?: string | null;
-          sdp?: any | null;
           caller_name?: string | null;
-          session_id?: string;
+          created_at?: string | null;
+          ice?: any | null;
+          id?: number;
           receiver_name?: string | null;
-          ice?: any[] | null;
+          sdp?: any | null;
+          session_id?: string;
         };
         Update: {
-          id?: number;
-          created_at?: string | null;
-          sdp?: any | null;
           caller_name?: string | null;
-          session_id?: string;
+          created_at?: string | null;
+          ice?: any | null;
+          id?: number;
           receiver_name?: string | null;
-          ice?: any[] | null;
+          sdp?: any | null;
+          session_id?: string;
         };
       };
     };

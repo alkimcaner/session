@@ -51,6 +51,7 @@ export default function Session() {
   const chatChannel = useRef<RTCDataChannel>();
   const rtEvent = useRef<RealtimeChannel>();
   const chatElementRef = useRef<HTMLUListElement>(null);
+  const isCaller = useRef<boolean | undefined>(undefined);
   const [messageInput, setMessageInput] = useState("");
   const [messages, setMessages] = useState<IChatMessage[]>([]);
   const [remoteMeta, setRemoteMeta] = useState<IRemoteMeta>({
@@ -156,10 +157,21 @@ export default function Session() {
     const handleOnIceGatheringStateChange = async () => {
       try {
         if (pc.current?.iceGatheringState === "complete") {
-          await supabase
-            .from("sessions")
-            .update({ ice: candidates.current })
-            .eq("session_id", router.query.id);
+          if (isCaller.current) {
+            await supabase
+              .from("sessions")
+              .update({
+                ice: { type: "offer", candidates: candidates.current },
+              })
+              .eq("session_id", router.query.id);
+          } else {
+            await supabase
+              .from("sessions")
+              .update({
+                ice: { type: "answer", candidates: candidates.current },
+              })
+              .eq("session_id", router.query.id);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -221,6 +233,8 @@ export default function Session() {
 
         //Answer
         if (data.sdp?.type === "offer" && data.caller_name !== userState.name) {
+          isCaller.current = false;
+
           const offerDescription = new RTCSessionDescription(data.sdp);
           await pc.current?.setRemoteDescription(offerDescription);
 
@@ -246,7 +260,7 @@ export default function Session() {
                 filter: `session_id=eq.${data.session_id}`,
               },
               (payload) => {
-                const ice: RTCIceCandidate[] = payload.new.ice;
+                const ice: RTCIceCandidate[] = payload.new.ice.candidates;
 
                 ice?.forEach((candidate) => {
                   pc.current?.addIceCandidate(candidate);
@@ -264,6 +278,8 @@ export default function Session() {
         }
         //Offer
         else {
+          isCaller.current = true;
+
           //Initialize peer data channel
           metaChannel.current = pc.current?.createDataChannel("meta");
           metaChannel.current?.addEventListener("message", handleOnMetaMessage);
@@ -297,18 +313,17 @@ export default function Session() {
                 filter: `session_id=eq.${data.session_id}`,
               },
               async (payload) => {
-                if (!payload.new.sdp || payload.new.sdp.type !== "answer")
-                  return;
+                if (payload.new.sdp) {
+                  const answerDescription = new RTCSessionDescription(
+                    payload.new.sdp
+                  );
+                  await pc.current?.setRemoteDescription(answerDescription);
+                }
 
-                const answerDescription = new RTCSessionDescription(
-                  payload.new.sdp
-                );
-
-                await pc.current?.setRemoteDescription(answerDescription);
-
-                const ice: RTCIceCandidate[] = payload.new.ice;
+                const ice: RTCIceCandidate[] = payload.new.ice?.candidates;
 
                 ice?.forEach((candidate) => {
+                  if (payload.new.ice.type !== "answer") return;
                   pc.current?.addIceCandidate(candidate);
                 });
               }
