@@ -34,8 +34,8 @@ export default function Navbar() {
   const handleGrantPermission = async () => {
     try {
       await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
+        video: { deviceId: { ideal: userState.defaultVideoDeviceId } },
+        audio: { deviceId: { ideal: userState.defaultAudioDeviceId } },
       });
     } catch (error) {
       console.error(error);

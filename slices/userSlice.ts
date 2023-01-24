@@ -72,6 +72,10 @@ export const userSlice = createSlice({
     stopRemoteStream: (state) => {
       state.remoteStream?.getTracks().forEach((track) => track.stop());
     },
+    updateLocalStream: (
+      state,
+      action: PayloadAction<"webcam" | "screen">
+    ) => {},
     toggleVideo: (state) => {
       if (!state.localStream || !state.localStream.getVideoTracks()[0]) return;
       state.localStream.getVideoTracks()[0].enabled = !state.isVideoEnabled;
