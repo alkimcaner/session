@@ -1,5 +1,6 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
+import type { AppDispatch, RootState } from "../store";
 import {
   adjectives,
   animals,
@@ -45,6 +46,53 @@ const initialState: UserState = {
   theme: "",
 };
 
+export const updateLocalStream = createAsyncThunk<
+  MediaStream | undefined,
+  { pc: RTCPeerConnection | undefined; screen: boolean },
+  { dispatch: AppDispatch; state: RootState }
+>("user/updateLocalStream", async ({ pc, screen }, { dispatch, getState }) => {
+  try {
+    let stream: MediaStream;
+
+    const videoSender = pc?.getSenders().find((s) => s.track?.kind === "video");
+
+    const audioSender = pc?.getSenders().find((s) => s.track?.kind === "audio");
+
+    if (screen && !getState().user.isScreenShareEnabled) {
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true,
+      });
+
+      dispatch(setIsScreenShareEnabled(true));
+      dispatch(setIsCameraMirrored(false));
+    } else {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { ideal: getState().user.defaultVideoDeviceId } },
+        audio: { deviceId: { ideal: getState().user.defaultAudioDeviceId } },
+      });
+
+      dispatch(setIsScreenShareEnabled(false));
+    }
+
+    const videoTrack = stream.getVideoTracks()[0];
+    const audioTrack = stream.getAudioTracks()[0];
+
+    //Stop stream
+    dispatch(stopLocalStream());
+
+    //Replace video track
+    videoSender?.replaceTrack(videoTrack);
+
+    //Replace audio track
+    audioSender?.replaceTrack(audioTrack);
+
+    return stream;
+  } catch (err) {
+    console.error(err);
+  }
+});
+
 export const userSlice = createSlice({
   name: "user",
   initialState,
@@ -72,10 +120,6 @@ export const userSlice = createSlice({
     stopRemoteStream: (state) => {
       state.remoteStream?.getTracks().forEach((track) => track.stop());
     },
-    updateLocalStream: (
-      state,
-      action: PayloadAction<"webcam" | "screen">
-    ) => {},
     toggleVideo: (state) => {
       if (!state.localStream || !state.localStream.getVideoTracks()[0]) return;
       state.localStream.getVideoTracks()[0].enabled = !state.isVideoEnabled;
@@ -111,6 +155,12 @@ export const userSlice = createSlice({
       localStorage.setItem("theme", action.payload);
       state.theme = action.payload;
     },
+  },
+  extraReducers(builder) {
+    builder.addCase(updateLocalStream.fulfilled, (state, action) => {
+      if (!action.payload) return;
+      state.localStream = action.payload;
+    });
   },
 });
 

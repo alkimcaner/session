@@ -10,16 +10,13 @@ import {
 } from "react-icons/bs";
 import { MdFitScreen } from "react-icons/md";
 import { IoCallOutline } from "react-icons/io5";
-import { useDispatch, useSelector } from "react-redux";
 import {
-  setIsScreenShareEnabled,
-  setLocalStream,
-  stopLocalStream,
   toggleAudio,
   toggleChat,
   toggleVideo,
+  updateLocalStream,
 } from "../slices/userSlice";
-import { RootState } from "../store";
+import { useAppDispatch, useAppSelector } from "../hooks";
 
 interface IProps {
   pc: React.MutableRefObject<RTCPeerConnection | undefined>;
@@ -27,8 +24,8 @@ interface IProps {
 
 export default function ActionBar({ pc }: IProps) {
   const [copyTooltip, setCopyTooltip] = useState("Copy session link");
-  const userState = useSelector((state: RootState) => state.user);
-  const dispatch = useDispatch();
+  const userState = useAppSelector((state) => state.user);
+  const dispatch = useAppDispatch();
 
   const handleCopy = async () => {
     try {
@@ -40,85 +37,9 @@ export default function ActionBar({ pc }: IProps) {
     }
   };
 
-  const handleShareScreen = async () => {
-    try {
-      let stream;
-      if (!userState.isScreenShareEnabled) {
-        stream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true,
-        });
-        dispatch(setIsScreenShareEnabled(true));
-      } else {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { ideal: userState.defaultVideoDeviceId } },
-          audio: { deviceId: { ideal: userState.defaultAudioDeviceId } },
-        });
-        dispatch(setIsScreenShareEnabled(false));
-      }
-
-      const track = stream.getVideoTracks()[0];
-
-      const sender = pc.current
-        ?.getSenders()
-        .find((s) => s.track?.kind === track.kind);
-      if (!sender) return;
-
-      //Stop stream
-      dispatch(stopLocalStream());
-
-      //Set stream
-      dispatch(setLocalStream(stream));
-
-      //Replace tracks
-      sender.replaceTrack(track);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  //Change default device
+  //Update the local stream when the default device changes
   useEffect(() => {
-    const updateMediaDevice = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { ideal: userState.defaultVideoDeviceId } },
-          audio: { deviceId: { ideal: userState.defaultAudioDeviceId } },
-        });
-
-        const videoTrack = stream.getVideoTracks()[0];
-        const audioTrack = stream.getAudioTracks()[0];
-
-        const videoSender = pc.current
-          ?.getSenders()
-          .find((s) => s.track?.kind === videoTrack.kind);
-
-        const audioSender = pc.current
-          ?.getSenders()
-          .find((s) => s.track?.kind === audioTrack.kind);
-
-        if (!videoSender || !audioSender) return;
-
-        //Stop stream
-        dispatch(stopLocalStream());
-
-        //Set stream
-        dispatch(setLocalStream(stream));
-
-        //Disable screen share
-        dispatch(setIsScreenShareEnabled(false));
-
-        //Replace video track
-        videoSender.replaceTrack(videoTrack);
-
-        //Replace audio track
-        audioSender.replaceTrack(audioTrack);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    updateMediaDevice();
+    dispatch(updateLocalStream({ pc: pc.current, screen: false }));
   }, [userState.defaultAudioDeviceId, userState.defaultVideoDeviceId]);
 
   return (
@@ -144,7 +65,9 @@ export default function ActionBar({ pc }: IProps) {
       </li>
       <li className="tooltip" data-tip={"Share screen"}>
         <button
-          onClick={handleShareScreen}
+          onClick={() =>
+            dispatch(updateLocalStream({ pc: pc.current, screen: true }))
+          }
           className={`text-xl p-2 rounded-full hover:text-secondary ${
             userState.isScreenShareEnabled && "bg-neutral-focus"
           }`}

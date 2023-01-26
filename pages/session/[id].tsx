@@ -6,8 +6,6 @@ import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { useRouter } from "next/router";
 import { Database } from "../../types/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
-import { useDispatch, useSelector } from "react-redux";
-import type { RootState } from "../../store";
 import {
   setIsScreenShareEnabled,
   setLocalStream,
@@ -16,6 +14,7 @@ import {
   stopRemoteStream,
 } from "../../slices/userSlice";
 import ActionBar from "../../components/ActionBar";
+import { useAppDispatch, useAppSelector } from "../../hooks";
 
 const servers: RTCConfiguration = {
   iceServers: [
@@ -40,8 +39,8 @@ interface IChatMessage {
 }
 
 export default function Session() {
-  const userState = useSelector((state: RootState) => state.user);
-  const dispatch = useDispatch();
+  const userState = useAppSelector((state) => state.user);
+  const dispatch = useAppDispatch();
   const supabase = useSupabaseClient<Database>();
   const router = useRouter();
   const candidates = useRef<RTCIceCandidate[]>([]);

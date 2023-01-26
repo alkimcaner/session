@@ -1,10 +1,7 @@
 import Link from "next/link";
-import { useSelector } from "react-redux";
-import type { RootState } from "../store";
 import { FiEdit, FiSettings } from "react-icons/fi";
 import { TiTick } from "react-icons/ti";
 import { FormEvent, useRef, useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
 import {
   setDefaultAudioDeviceId,
   setDefaultVideoDeviceId,
@@ -13,10 +10,11 @@ import {
   setName,
   setTheme,
 } from "../slices/userSlice";
+import { useAppDispatch, useAppSelector } from "../hooks";
 
 export default function Navbar() {
-  const userState = useSelector((state: RootState) => state.user);
-  const dispatch = useDispatch();
+  const userState = useAppSelector((state) => state.user);
+  const dispatch = useAppDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isNameEditable, setIsNameEditable] = useState(false);
   const [audioDevices, setAudioDevices] = useState<InputDeviceInfo[]>();
