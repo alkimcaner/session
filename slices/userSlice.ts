@@ -58,25 +58,25 @@ export const updateLocalStream = createAsyncThunk<
 
     const audioSender = pc?.getSenders().find((s) => s.track?.kind === "audio");
 
-    if (screen && !getState().user.isScreenShareEnabled) {
+    if (screen) {
       stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true,
       });
 
-      dispatch(setIsScreenShareEnabled(true));
       dispatch(setIsCameraMirrored(false));
     } else {
       stream = await navigator.mediaDevices.getUserMedia({
         video: { deviceId: { ideal: getState().user.defaultVideoDeviceId } },
         audio: { deviceId: { ideal: getState().user.defaultAudioDeviceId } },
       });
-
-      dispatch(setIsScreenShareEnabled(false));
     }
 
     const videoTrack = stream.getVideoTracks()[0];
     const audioTrack = stream.getAudioTracks()[0];
+
+    //Stop screen share if mediastream ends
+    videoTrack.onended = () => dispatch(setIsScreenShareEnabled(false));
 
     //Stop stream
     dispatch(stopLocalStream());

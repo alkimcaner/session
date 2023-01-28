@@ -11,6 +11,7 @@ import {
 import { MdFitScreen } from "react-icons/md";
 import { IoCallOutline } from "react-icons/io5";
 import {
+  setIsScreenShareEnabled,
   toggleAudio,
   toggleChat,
   toggleVideo,
@@ -39,8 +40,18 @@ export default function ActionBar({ pc }: IProps) {
 
   //Update the local stream when the default device changes
   useEffect(() => {
+    dispatch(setIsScreenShareEnabled(false));
     dispatch(updateLocalStream({ pc: pc.current, screen: false }));
   }, [userState.defaultAudioDeviceId, userState.defaultVideoDeviceId]);
+
+  //Update the local stream when the screen share state changes
+  useEffect(() => {
+    if (userState.isScreenShareEnabled) {
+      dispatch(updateLocalStream({ pc: pc.current, screen: true }));
+    } else {
+      dispatch(updateLocalStream({ pc: pc.current, screen: false }));
+    }
+  }, [userState.isScreenShareEnabled]);
 
   return (
     <ul className="fixed bottom-4 flex justify-center items-center gap-4 bg-base-100 border border-neutral py-4 px-8 rounded-xl z-20 shadow-lg">
@@ -66,7 +77,7 @@ export default function ActionBar({ pc }: IProps) {
       <li className="tooltip" data-tip={"Share screen"}>
         <button
           onClick={() =>
-            dispatch(updateLocalStream({ pc: pc.current, screen: true }))
+            dispatch(setIsScreenShareEnabled(!userState.isScreenShareEnabled))
           }
           className={`text-xl p-2 rounded-full hover:text-secondary ${
             userState.isScreenShareEnabled && "bg-neutral-focus"
