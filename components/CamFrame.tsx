@@ -33,11 +33,13 @@ export default function CamFrame({
         playsInline
         controls={false}
         muted={local ? true : !isAudioEnabled}
-        className={`w-full ${mirror && "-scale-x-100"}`}
+        className={`w-full ${mirror && "-scale-x-100"} ${
+          !isVideoEnabled && "hidden"
+        }`}
       />
 
       {!isVideoEnabled && (
-        <div className="text-2xl text-white absolute">
+        <div className="text-2xl text-base-content absolute">
           <BsCameraVideoOff />
         </div>
       )}

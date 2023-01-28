@@ -70,6 +70,8 @@ export const updateLocalStream = createAsyncThunk<
         video: { deviceId: { ideal: getState().user.defaultVideoDeviceId } },
         audio: { deviceId: { ideal: getState().user.defaultAudioDeviceId } },
       });
+
+      dispatch(setIsScreenShareEnabled(false));
     }
 
     const videoTrack = stream.getVideoTracks()[0];
@@ -89,6 +91,7 @@ export const updateLocalStream = createAsyncThunk<
 
     return stream;
   } catch (err) {
+    dispatch(setIsScreenShareEnabled(false));
     console.error(err);
   }
 });
@@ -120,18 +123,18 @@ export const userSlice = createSlice({
     stopRemoteStream: (state) => {
       state.remoteStream?.getTracks().forEach((track) => track.stop());
     },
-    toggleVideo: (state) => {
+    setIsVideoEnabled: (state, action: PayloadAction<boolean>) => {
       if (!state.localStream || !state.localStream.getVideoTracks()[0]) return;
-      state.localStream.getVideoTracks()[0].enabled = !state.isVideoEnabled;
-      state.isVideoEnabled = !state.isVideoEnabled;
+      state.localStream.getVideoTracks()[0].enabled = action.payload;
+      state.isVideoEnabled = action.payload;
     },
-    toggleAudio: (state) => {
+    setIsAudioEnabled: (state, action: PayloadAction<boolean>) => {
       if (!state.localStream || !state.localStream.getAudioTracks()[0]) return;
-      state.localStream.getAudioTracks()[0].enabled = !state.isAudioEnabled;
-      state.isAudioEnabled = !state.isAudioEnabled;
+      state.localStream.getAudioTracks()[0].enabled = action.payload;
+      state.isAudioEnabled = action.payload;
     },
-    toggleChat: (state) => {
-      state.isChatVisible = !state.isChatVisible;
+    setIsChatVisible: (state, action: PayloadAction<boolean>) => {
+      state.isChatVisible = action.payload;
     },
     setIsScreenShareEnabled: (state, action: PayloadAction<boolean>) => {
       state.isScreenShareEnabled = action.payload;
@@ -155,6 +158,16 @@ export const userSlice = createSlice({
       localStorage.setItem("theme", action.payload);
       state.theme = action.payload;
     },
+    resetState: (state) => {
+      state.localStream?.getTracks().forEach((track) => track.stop());
+      state.remoteStream?.getTracks().forEach((track) => track.stop());
+      state.localStream = undefined;
+      state.remoteStream = undefined;
+      state.isScreenShareEnabled = false;
+      state.isChatVisible = false;
+      state.isVideoEnabled = true;
+      state.isAudioEnabled = true;
+    },
   },
   extraReducers(builder) {
     builder.addCase(updateLocalStream.fulfilled, (state, action) => {
@@ -170,15 +183,16 @@ export const {
   setRemoteStream,
   stopLocalStream,
   stopRemoteStream,
-  toggleVideo,
-  toggleAudio,
-  toggleChat,
+  setIsVideoEnabled,
+  setIsAudioEnabled,
+  setIsChatVisible,
   setIsScreenShareEnabled,
   setIsPermissionsGranted,
   setDefaultAudioDeviceId,
   setDefaultVideoDeviceId,
   setIsCameraMirrored,
   setTheme,
+  resetState,
 } = userSlice.actions;
 
 export default userSlice.reducer;

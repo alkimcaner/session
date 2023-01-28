@@ -12,9 +12,9 @@ import { MdFitScreen } from "react-icons/md";
 import { IoCallOutline } from "react-icons/io5";
 import {
   setIsScreenShareEnabled,
-  toggleAudio,
-  toggleChat,
-  toggleVideo,
+  setIsChatVisible,
+  setIsAudioEnabled,
+  setIsVideoEnabled,
   updateLocalStream,
 } from "../slices/userSlice";
 import { useAppDispatch, useAppSelector } from "../hooks";
@@ -40,7 +40,6 @@ export default function ActionBar({ pc }: IProps) {
 
   //Update the local stream when the default device changes
   useEffect(() => {
-    dispatch(setIsScreenShareEnabled(false));
     dispatch(updateLocalStream({ pc: pc.current, screen: false }));
   }, [userState.defaultAudioDeviceId, userState.defaultVideoDeviceId]);
 
@@ -54,11 +53,11 @@ export default function ActionBar({ pc }: IProps) {
   }, [userState.isScreenShareEnabled]);
 
   return (
-    <ul className="fixed bottom-4 flex justify-center items-center gap-4 bg-base-100 border border-neutral py-4 px-8 rounded-xl z-20 shadow-lg">
+    <ul className="fixed bottom-8 flex justify-center items-center gap-4 z-20">
       <li className="tooltip" data-tip={copyTooltip}>
         <button
           onClick={handleCopy}
-          className="text-xl p-2 rounded-full hover:text-secondary"
+          className="text-lg btn btn-square btn-ghost"
         >
           <BsClipboard />
         </button>
@@ -68,8 +67,10 @@ export default function ActionBar({ pc }: IProps) {
         data-tip={userState.isChatVisible ? "Hide chat" : "Show chat"}
       >
         <button
-          onClick={() => dispatch(toggleChat())}
-          className="text-xl p-2 rounded-full hover:text-secondary"
+          onClick={() => dispatch(setIsChatVisible(!userState.isChatVisible))}
+          className={`text-lg btn btn-square ${
+            userState.isChatVisible ? "btn-primary" : "btn-ghost"
+          }`}
         >
           <BsChat />
         </button>
@@ -79,8 +80,8 @@ export default function ActionBar({ pc }: IProps) {
           onClick={() =>
             dispatch(setIsScreenShareEnabled(!userState.isScreenShareEnabled))
           }
-          className={`text-xl p-2 rounded-full hover:text-secondary ${
-            userState.isScreenShareEnabled && "bg-neutral-focus"
+          className={`text-lg btn btn-square ${
+            userState.isScreenShareEnabled ? "btn-primary" : "btn-ghost"
           }`}
         >
           <MdFitScreen />
@@ -91,8 +92,10 @@ export default function ActionBar({ pc }: IProps) {
         data-tip={userState.isVideoEnabled ? "Disable camera" : "Enable camera"}
       >
         <button
-          onClick={() => dispatch(toggleVideo())}
-          className="text-xl p-2 rounded-full hover:text-secondary"
+          onClick={() => dispatch(setIsVideoEnabled(!userState.isVideoEnabled))}
+          className={`text-lg btn btn-square ${
+            userState.isVideoEnabled ? "btn-ghost" : "btn-error"
+          }`}
         >
           {userState.isVideoEnabled ? <BsCameraVideo /> : <BsCameraVideoOff />}
         </button>
@@ -104,15 +107,17 @@ export default function ActionBar({ pc }: IProps) {
         }
       >
         <button
-          onClick={() => dispatch(toggleAudio())}
-          className="text-xl p-2 rounded-full hover:text-secondary"
+          onClick={() => dispatch(setIsAudioEnabled(!userState.isAudioEnabled))}
+          className={`text-lg btn btn-square ${
+            userState.isAudioEnabled ? "btn-ghost" : "btn-error"
+          }`}
         >
           {userState.isAudioEnabled ? <BsVolumeUp /> : <BsVolumeMute />}
         </button>
       </li>
       <li className="tooltip" data-tip="Leave session">
         <Link href="/">
-          <div className="text-xl p-2 rounded-full border border-primary text-primary hover:bg-primary hover:text-base-100">
+          <div className="text-lg btn btn-square btn-error">
             <IoCallOutline />
           </div>
         </Link>

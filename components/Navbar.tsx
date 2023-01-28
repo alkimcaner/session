@@ -100,7 +100,7 @@ export default function Navbar() {
         setVideoDevices(videoDevices);
 
         //Set default state if empty
-        if (!userState.defaultVideoDeviceId.length) {
+        if (!userState.defaultVideoDeviceId) {
           dispatch(setDefaultVideoDeviceId(videoDevices[0].deviceId));
         }
       } catch (error) {

@@ -7,11 +7,9 @@ import { useRouter } from "next/router";
 import { Database } from "../../types/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import {
-  setIsScreenShareEnabled,
+  resetState,
   setLocalStream,
   setRemoteStream,
-  stopLocalStream,
-  stopRemoteStream,
 } from "../../slices/userSlice";
 import ActionBar from "../../components/ActionBar";
 import { useAppDispatch, useAppSelector } from "../../hooks";
@@ -339,11 +337,7 @@ export default function Session() {
 
     //Cleanup
     return () => {
-      dispatch(stopLocalStream());
-      dispatch(stopRemoteStream());
-      dispatch(setLocalStream(undefined));
-      dispatch(setRemoteStream(undefined));
-      dispatch(setIsScreenShareEnabled(false));
+      dispatch(resetState());
 
       pc.current?.removeEventListener("icecandidate", handleOnIceCandidate);
       pc.current?.removeEventListener(
