@@ -75,7 +75,7 @@ export default function ActionBar({ pc }: IProps) {
           <BsChat />
         </button>
       </li>
-      <li className="tooltip" data-tip={"Share screen"}>
+      <li className="tooltip hidden sm:inline-block" data-tip={"Share screen"}>
         <button
           onClick={() =>
             dispatch(setIsScreenShareEnabled(!userState.isScreenShareEnabled))
