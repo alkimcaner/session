@@ -5,6 +5,7 @@ import {
   BsCameraVideoOff,
   BsChat,
   BsClipboard,
+  BsEyeSlashFill,
   BsVolumeMute,
   BsVolumeUp,
 } from "react-icons/bs";
@@ -16,6 +17,7 @@ import {
   setIsAudioEnabled,
   setIsVideoEnabled,
   updateLocalStream,
+  setFocus,
 } from "../slices/userSlice";
 import { useAppDispatch, useAppSelector } from "../hooks";
 
@@ -53,7 +55,18 @@ export default function ActionBar({ pc }: IProps) {
   }, [userState.isScreenShareEnabled]);
 
   return (
-    <ul className="fixed bottom-8 flex justify-center items-center gap-4 z-20">
+    <ul className="fixed bottom-8 flex justify-center items-center gap-4 z-20 bg-base-300 shadow-xl p-4 rounded-xl">
+      <li>
+        <button
+          onClick={() => dispatch(setFocus(undefined))}
+          className={`btn ${
+            userState.focus === undefined ? "hidden" : "inline-flex"
+          } gap-2`}
+        >
+          <BsEyeSlashFill />
+          Stop Focusing
+        </button>
+      </li>
       <li className="tooltip" data-tip={copyTooltip}>
         <button
           onClick={handleCopy}

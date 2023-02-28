@@ -29,6 +29,7 @@ export interface UserState {
   defaultVideoDeviceId: string;
   isCameraMirrored: boolean;
   theme: string;
+  focus: "local" | "remote" | undefined;
 }
 
 const initialState: UserState = {
@@ -44,6 +45,7 @@ const initialState: UserState = {
   defaultVideoDeviceId: "",
   isCameraMirrored: false,
   theme: "",
+  focus: undefined,
 };
 
 export const updateLocalStream = createAsyncThunk<
@@ -158,6 +160,12 @@ export const userSlice = createSlice({
       localStorage.setItem("theme", action.payload);
       state.theme = action.payload;
     },
+    setFocus: (
+      state,
+      action: PayloadAction<"local" | "remote" | undefined>
+    ) => {
+      state.focus = action.payload;
+    },
     resetState: (state) => {
       state.localStream?.getTracks().forEach((track) => track.stop());
       state.remoteStream?.getTracks().forEach((track) => track.stop());
@@ -167,6 +175,7 @@ export const userSlice = createSlice({
       state.isChatVisible = false;
       state.isVideoEnabled = true;
       state.isAudioEnabled = true;
+      state.focus = undefined;
     },
   },
   extraReducers(builder) {
@@ -192,6 +201,7 @@ export const {
   setDefaultVideoDeviceId,
   setIsCameraMirrored,
   setTheme,
+  setFocus,
   resetState,
 } = userSlice.actions;
 

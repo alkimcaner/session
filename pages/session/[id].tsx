@@ -385,7 +385,7 @@ export default function Session() {
       <Navbar />
 
       <main className="flex-1 flex items-center justify-center gap-16 px-4">
-        <ul className="flex flex-wrap justify-center items-center flex-col sm:flex-row gap-4 w-full h-full">
+        <div className="flex flex-wrap justify-center flex-col sm:flex-row gap-4 w-full h-full">
           {userState.localStream ? (
             <CamFrame
               username={userState.name}
@@ -407,7 +407,7 @@ export default function Session() {
               mirror={remoteMeta.isCameraMirrored}
             />
           )}
-        </ul>
+        </div>
         <div
           className={`fixed right-4 bg-base-300 p-4 h-1/2 w-72 flex flex-col gap-4 rounded-xl shadow-lg border border-neutral transition-all ease-in-out ${
             !userState.isChatVisible && "invisible opacity-0 scale-95"
