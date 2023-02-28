@@ -329,6 +329,7 @@ export default function Session() {
         }
       } catch (err) {
         console.error(err);
+        router.push("/");
       }
     };
 
