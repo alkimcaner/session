@@ -22,23 +22,32 @@ Built with:
 ### Install dependencies
 
 ```bash
+# npm
 npm install
-# or
+# yarn
 yarn install
+# pnpm
+pnpm install
 ```
 
 ### Start dev server
 
 ```bash
+# npm
 npm run dev
-# or
+# yarn
 yarn dev
+# pnpm
+pnpm dev
 ```
 
 ### Build for production
 
 ```bash
+# npm
 npm run build
-# or
+# yarn
 yarn build
+# pnpm
+pnpm build
 ```
