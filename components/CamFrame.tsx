@@ -31,13 +31,13 @@ export default function CamFrame({
 
   const frameSize = () => {
     if (userState.focus === "local" && local) {
-      return "max-w-[75%]";
+      return "sm:max-w-[75%]";
     } else if (userState.focus === "remote" && !local) {
-      return "max-w-[75%]";
+      return "sm:max-w-[75%]";
     } else if (userState.focus === undefined) {
-      return "max-w-[100%]";
+      return "sm:max-w-[50%]";
     } else {
-      return "max-w-[25%]";
+      return "sm:max-w-[25%]";
     }
   };
 
