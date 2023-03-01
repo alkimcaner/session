@@ -43,7 +43,7 @@ export default function CamFrame({
 
   return (
     <div
-      className={`group relative flex-1 ${frameSize()} w-full h-full aspect-video bg-base-300 rounded-xl overflow-hidden flex justify-center items-center shadow-lg`}
+      className={`group relative flex-1 ${frameSize()} w-full h-full aspect-video bg-base-300 rounded-btn overflow-hidden flex justify-center items-center shadow-lg`}
     >
       <video
         ref={videoRef}
@@ -62,7 +62,7 @@ export default function CamFrame({
         </div>
       )}
 
-      <div className="absolute flex items-center gap-1 bottom-1 left-1 px-2 py-1 text-xs text-white bg-black bg-opacity-50 rounded-lg">
+      <div className="absolute flex items-center gap-1 bottom-1 left-1 px-2 py-1 text-xs text-white bg-black bg-opacity-50 rounded-btn">
         {!isAudioEnabled && (
           <span className="text-red-500 text-base">
             <BsVolumeMute />

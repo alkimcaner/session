@@ -1,6 +1,8 @@
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import {
+  BsArrowDownShort,
+  BsArrowUpShort,
   BsCameraVideo,
   BsCameraVideoOff,
   BsChat,
@@ -29,6 +31,7 @@ export default function ActionBar({ pc }: IProps) {
   const [copyTooltip, setCopyTooltip] = useState("Copy session link");
   const userState = useAppSelector((state) => state.user);
   const dispatch = useAppDispatch();
+  const [isHidden, setIsHidden] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -55,7 +58,17 @@ export default function ActionBar({ pc }: IProps) {
   }, [userState.isScreenShareEnabled]);
 
   return (
-    <ul className="fixed bottom-8 flex justify-center items-center gap-4 z-20 bg-base-300 shadow-xl p-4 rounded-xl">
+    <ul
+      className={`fixed ${
+        isHidden ? "-bottom-12" : "bottom-8"
+      } flex justify-center items-center gap-1 z-20 bg-base-300 shadow-xl rounded-btn transition-[bottom]`}
+    >
+      <button
+        onClick={() => setIsHidden(!isHidden)}
+        className="absolute -top-full btn btn-circle btn-sm text-xl"
+      >
+        {isHidden ? <BsArrowUpShort /> : <BsArrowDownShort />}
+      </button>
       <li>
         <button
           onClick={() => dispatch(setFocus(undefined))}

@@ -384,7 +384,7 @@ export default function Session() {
 
       <Navbar />
 
-      <main className="flex-1 flex items-center justify-center gap-16 px-4">
+      <main className="flex-1 flex items-center justify-center px-4">
         <div className="flex flex-wrap justify-center flex-col sm:flex-row gap-4 w-full h-full">
           {userState.localStream ? (
             <CamFrame
@@ -409,7 +409,7 @@ export default function Session() {
           )}
         </div>
         <div
-          className={`fixed right-4 bg-base-300 p-4 h-1/2 w-72 flex flex-col gap-4 rounded-xl shadow-lg border border-neutral transition-all ease-in-out ${
+          className={`fixed right-4 bg-base-300 p-4 h-1/2 w-72 flex flex-col gap-4 rounded-xl shadow-lg transition-all ease-in-out ${
             !userState.isChatVisible && "invisible opacity-0 scale-95"
           }`}
         >
