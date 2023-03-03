@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { FiEdit, FiSettings } from "react-icons/fi";
 import { TiTick } from "react-icons/ti";
@@ -58,12 +60,10 @@ export default function Navbar() {
       }
     };
 
-    let permission: PermissionStatus;
-
     const checkPermission = async () => {
       try {
         const permissionName = "microphone" as PermissionName;
-        permission = await navigator.permissions.query({
+        const permission = await navigator.permissions.query({
           name: permissionName,
         });
         // Initial permission check
@@ -71,17 +71,13 @@ export default function Navbar() {
           dispatch(setIsPermissionsGranted(true));
         }
         //On permission change event
-        permission.addEventListener("change", handleOnPermissionChange);
+        permission.onchange = handleOnPermissionChange;
       } catch (error) {
         console.error(error);
       }
     };
 
     checkPermission();
-
-    return () => {
-      permission.removeEventListener("change", handleOnPermissionChange);
-    };
   }, []);
 
   // Enumerate devices if permissions are granted

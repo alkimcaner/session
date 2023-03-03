@@ -1,18 +1,17 @@
+"use client";
+
 import React, { useEffect, useRef, useState } from "react";
-import CamFrame from "../../components/CamFrame";
+import CamFrame from "./CamFrame";
 import Head from "next/head";
-import Navbar from "../../components/Navbar";
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { useRouter } from "next/router";
-import { Database } from "../../types/supabase";
-import { RealtimeChannel } from "@supabase/supabase-js";
+import Navbar from "../../../Navbar";
+
 import {
   resetState,
   setLocalStream,
   setRemoteStream,
-} from "../../slices/userSlice";
-import ActionBar from "../../components/ActionBar";
-import { useAppDispatch, useAppSelector } from "../../hooks";
+} from "../../../../slices/userSlice";
+import ActionBar from "./ActionBar";
+import { useAppDispatch, useAppSelector } from "../../../../hooks";
 import { Peer } from "peerjs";
 
 interface IRemoteInfo {
@@ -31,8 +30,6 @@ interface IChatMessage {
 export default function Session() {
   const userState = useAppSelector((state) => state.user);
   const dispatch = useAppDispatch();
-  const supabase = useSupabaseClient<Database>();
-  const rtEvent = useRef<RealtimeChannel>();
   const chatElementRef = useRef<HTMLUListElement>(null);
   const [messageInput, setMessageInput] = useState("");
   const [messages, setMessages] = useState<IChatMessage[]>([]);
@@ -128,7 +125,7 @@ export default function Session() {
             </div>
           </form>
         </div>
-        <ActionBar />
+        {/* <ActionBar /> */}
       </main>
     </div>
   );

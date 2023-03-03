@@ -1,28 +1,12 @@
+"use client";
+
 import Head from "next/head";
 import Image from "next/image";
-import Navbar from "../components/Navbar";
+import Navbar from "./Navbar";
 import { BsCameraVideo, BsVolumeUp, BsClipboard } from "react-icons/bs";
 import { IoCallOutline } from "react-icons/io5";
-import { useRouter } from "next/router";
-import { useSupabaseClient } from "@supabase/auth-helpers-react";
-import { Database } from "../types/supabase";
 
 export default function Home() {
-  const supabase = useSupabaseClient<Database>();
-  const router = useRouter();
-
-  const handleCreateSession = async () => {
-    const { data, error } = await supabase
-      .from("sessions")
-      .insert({
-        caller_name: localStorage.getItem("username"),
-      })
-      .select()
-      .single();
-
-    router.push(`/session/${data?.session_id}`);
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <Head>
@@ -44,10 +28,8 @@ export default function Home() {
             montly plans. Session is free of charge.
           </p>
           <div className="flex items-center gap-2 w-fit">
-            <button onClick={handleCreateSession} className="btn btn-primary">
-              START A SESSION
-            </button>
-            <span className="text-primary text-xs">For free!</span>
+            <button className="btn btn-primary">START A SESSION</button>
+            <span className="text-base-content text-xs">For free!</span>
           </div>
         </div>
         <div className="mockup-window border border-neutral w-full h-full select-none bg-base-300">
@@ -55,7 +37,7 @@ export default function Home() {
             <div className="w-full flex flex-col sm:flex-row gap-4">
               <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                 <Image
-                  src="/assets/dog.jpg"
+                  src="/dog.jpg"
                   alt=""
                   fill
                   priority
@@ -67,7 +49,7 @@ export default function Home() {
               </div>
               <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                 <Image
-                  src="/assets/cat.jpg"
+                  src="/cat.jpg"
                   alt=""
                   fill
                   priority
