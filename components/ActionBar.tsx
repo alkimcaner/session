@@ -60,12 +60,12 @@ export default function ActionBar({ pc }: IProps) {
   return (
     <ul
       className={`fixed ${
-        isHidden ? "-bottom-12" : "bottom-8"
-      } flex justify-center items-center gap-1 z-20 bg-base-300 shadow-xl rounded-btn transition-[bottom]`}
+        isHidden ? "-bottom-16" : "bottom-8"
+      } flex justify-center items-center gap-1 z-20 p-2 bg-base-300 shadow-xl rounded-btn transition-[bottom]`}
     >
       <button
         onClick={() => setIsHidden(!isHidden)}
-        className="absolute -top-full btn btn-circle btn-sm text-xl"
+        className="absolute -top-12 btn btn-circle btn-sm text-xl"
       >
         {isHidden ? <BsArrowUpShort /> : <BsArrowDownShort />}
       </button>
