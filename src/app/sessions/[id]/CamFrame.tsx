@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { BsCameraVideoOff, BsVolumeMute, BsEyeFill } from "react-icons/bs";
-import { useAppDispatch, useAppSelector } from "../../../../hooks";
-import { setFocus } from "../../../../slices/userSlice";
+import { useAppDispatch, useAppSelector } from "../../../hooks";
+import { setFocus } from "../../../slices/userSlice";
 
 interface IProps {
   username: string;

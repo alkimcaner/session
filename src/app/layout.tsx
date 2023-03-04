@@ -1,5 +1,6 @@
 import "./globals.css";
 import AppProviders from "./AppProviders";
+import Navbar from "./Navbar";
 
 export const metadata = {
   title: "Session",
@@ -13,9 +14,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <AppProviders>{children}</AppProviders>
-      </body>
+      <AppProviders>
+        <body className="h-screen flex flex-col">
+          <Navbar />
+          {children}
+        </body>
+      </AppProviders>
     </html>
   );
 }

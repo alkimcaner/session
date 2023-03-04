@@ -2,6 +2,19 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { AppDispatch, RootState } from "../store";
 
+let theme;
+let defaultAudioDeviceId;
+let defaultVideoDeviceId;
+let isCameraMirrored;
+
+//Get localstorage
+if (typeof window !== undefined) {
+  theme = localStorage.getItem("theme");
+  defaultAudioDeviceId = localStorage.getItem("defaultAudioDeviceId");
+  defaultVideoDeviceId = localStorage.getItem("defaultVideoDeviceId");
+  isCameraMirrored = localStorage.getItem("isCameraMirrored") === "true";
+}
+
 export interface UserState {
   name: string;
   localStream: MediaStream | undefined;
@@ -27,10 +40,10 @@ const initialState: UserState = {
   isScreenShareEnabled: false,
   isChatVisible: false,
   isPermissionsGranted: false,
-  defaultAudioDeviceId: "default",
-  defaultVideoDeviceId: "",
-  isCameraMirrored: false,
-  theme: "",
+  defaultAudioDeviceId: defaultAudioDeviceId || "default",
+  defaultVideoDeviceId: defaultVideoDeviceId || "",
+  isCameraMirrored: isCameraMirrored || false,
+  theme: theme || "",
   focus: undefined,
 };
 

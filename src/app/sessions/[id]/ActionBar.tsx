@@ -20,8 +20,8 @@ import {
   setIsVideoEnabled,
   updateLocalStream,
   setFocus,
-} from "../../../../slices/userSlice";
-import { useAppDispatch, useAppSelector } from "../../../../hooks";
+} from "../../../slices/userSlice";
+import { useAppDispatch, useAppSelector } from "../../../hooks";
 
 interface IProps {
   pc: React.MutableRefObject<RTCPeerConnection | undefined>;
