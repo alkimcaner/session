@@ -8,7 +8,7 @@ let defaultVideoDeviceId;
 let isCameraMirrored;
 
 //Get localstorage
-if (typeof window !== undefined) {
+if (localStorage) {
   theme = localStorage.getItem("theme");
   defaultAudioDeviceId = localStorage.getItem("defaultAudioDeviceId");
   defaultVideoDeviceId = localStorage.getItem("defaultVideoDeviceId");
