@@ -58,7 +58,7 @@ export default function Session() {
       <div className="flex flex-wrap justify-center flex-col sm:flex-row gap-4 w-full h-full">
         {userState.localStream ? (
           <CamFrame
-            username={userState.name}
+            username="John Doe"
             stream={userState.localStream}
             isAudioEnabled={userState.isAudioEnabled}
             isVideoEnabled={userState.isVideoEnabled}

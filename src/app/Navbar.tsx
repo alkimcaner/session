@@ -3,7 +3,7 @@
 import { useAppDispatch, useAppSelector } from "@/hooks";
 import { setTheme } from "@/slices/userSlice";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { BsPalette2, BsPersonFill, BsThreeDots } from "react-icons/bs";
 import { FiSettings } from "react-icons/fi";
 import { MdKeyboardArrowDown, MdLogout } from "react-icons/md";
@@ -44,18 +44,23 @@ const themes = [
 export default function Navbar() {
   const userState = useAppSelector((state) => state.user);
   const dispatch = useAppDispatch();
+  const [isClient, setIsClient] = useState(false);
 
   //Change theme
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", userState.theme);
   }, [userState.theme]);
 
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <nav className="w-full flex justify-center bg-base-100">
       <div className="relative max-w-7xl flex-1 flex items-center gap-4 p-4">
         <Link
           href="/"
-          className="text-2xl font-extrabold text-secondary hover:text-secondary-focus transition-colors mr-auto"
+          className="text-2xl font-extrabold text-primary hover:text-secondary-focus transition-colors mr-auto"
         >
           SESSION
         </Link>
@@ -72,7 +77,9 @@ export default function Navbar() {
               <button
                 key={index}
                 className={`btn ${
-                  userState.theme === theme ? "btn-primary" : "btn-ghost"
+                  isClient && userState.theme === theme
+                    ? "btn-primary"
+                    : "btn-ghost"
                 } justify-start`}
                 onClick={() => dispatch(setTheme(theme))}
               >
@@ -83,7 +90,7 @@ export default function Navbar() {
         </div>
         {/* Profile menu */}
         <div className="dropdown dropdown-end">
-          <label tabIndex={0} className="btn gap-2">
+          <label tabIndex={0} className="btn btn-secondary gap-2">
             John Doe <BsThreeDots />
           </label>
           <ul

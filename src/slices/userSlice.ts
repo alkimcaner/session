@@ -1,22 +1,21 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { AppDispatch, RootState } from "../store";
+import Cookies from "js-cookie";
 
-let theme;
+const theme = Cookies.get("theme");
 let defaultAudioDeviceId;
 let defaultVideoDeviceId;
 let isCameraMirrored;
 
 //Get localstorage
-if (localStorage) {
-  theme = localStorage.getItem("theme");
+if (typeof window !== "undefined" && window.localStorage) {
   defaultAudioDeviceId = localStorage.getItem("defaultAudioDeviceId");
   defaultVideoDeviceId = localStorage.getItem("defaultVideoDeviceId");
   isCameraMirrored = localStorage.getItem("isCameraMirrored") === "true";
 }
 
 export interface UserState {
-  name: string;
   localStream: MediaStream | undefined;
   remoteStream: MediaStream | undefined;
   isVideoEnabled: boolean;
@@ -32,7 +31,6 @@ export interface UserState {
 }
 
 const initialState: UserState = {
-  name: "",
   localStream: undefined,
   remoteStream: undefined,
   isVideoEnabled: true,
@@ -101,10 +99,6 @@ export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setName: (state, action: PayloadAction<string>) => {
-      localStorage.setItem("username", action.payload);
-      state.name = action.payload;
-    },
     setLocalStream: (state, action: PayloadAction<MediaStream | undefined>) => {
       state.localStream = action.payload;
     },
@@ -152,7 +146,7 @@ export const userSlice = createSlice({
       state.isCameraMirrored = action.payload;
     },
     setTheme: (state, action: PayloadAction<string>) => {
-      localStorage.setItem("theme", action.payload);
+      document.cookie = `theme=${action.payload}; max-age=1704085200; path=/`;
       state.theme = action.payload;
     },
     setFocus: (
@@ -182,7 +176,6 @@ export const userSlice = createSlice({
 });
 
 export const {
-  setName,
   setLocalStream,
   setRemoteStream,
   stopLocalStream,
