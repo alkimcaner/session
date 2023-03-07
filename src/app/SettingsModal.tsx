@@ -29,8 +29,8 @@ export default function SettingsModal() {
 
   // Check permissions
   useEffect(() => {
-    const handleOnPermissionChange = (ev: Event) => {
-      const target = ev.target as PermissionStatus;
+    const handleOnPermissionChange = (e: Event) => {
+      const target = e.target as PermissionStatus;
       if (target.state === "granted") {
         dispatch(setIsPermissionsGranted(true));
       } else {
@@ -97,8 +97,8 @@ export default function SettingsModal() {
             {userState.isPermissionsGranted ? (
               <select
                 value={userState.defaultAudioDeviceId}
-                onChange={(ev) =>
-                  dispatch(setDefaultAudioDeviceId(ev.target.value))
+                onChange={(e) =>
+                  dispatch(setDefaultAudioDeviceId(e.target.value))
                 }
                 className="select select-bordered select-sm w-full max-w-[12rem]"
               >
@@ -125,8 +125,8 @@ export default function SettingsModal() {
             {userState.isPermissionsGranted ? (
               <select
                 value={userState.defaultVideoDeviceId}
-                onChange={(ev) =>
-                  dispatch(setDefaultVideoDeviceId(ev.target.value))
+                onChange={(e) =>
+                  dispatch(setDefaultVideoDeviceId(e.target.value))
                 }
                 className="select select-bordered select-sm w-full max-w-[12rem]"
               >
@@ -154,9 +154,7 @@ export default function SettingsModal() {
               type="checkbox"
               className="toggle toggle-primary"
               checked={userState.isCameraMirrored}
-              onChange={(ev) =>
-                dispatch(setIsCameraMirrored(ev.target.checked))
-              }
+              onChange={(e) => dispatch(setIsCameraMirrored(e.target.checked))}
             />
           </div>
         </label>

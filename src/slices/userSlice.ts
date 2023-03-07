@@ -2,6 +2,7 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { AppDispatch, RootState } from "../store";
 import Cookies from "js-cookie";
+import { User } from "@supabase/supabase-js";
 
 const theme = Cookies.get("theme");
 let defaultAudioDeviceId;
@@ -16,6 +17,7 @@ if (typeof window !== "undefined" && window.localStorage) {
 }
 
 export interface UserState {
+  user: User | null;
   localStream: MediaStream | undefined;
   remoteStream: MediaStream | undefined;
   isVideoEnabled: boolean;
@@ -31,6 +33,7 @@ export interface UserState {
 }
 
 const initialState: UserState = {
+  user: null,
   localStream: undefined,
   remoteStream: undefined,
   isVideoEnabled: true,
@@ -99,6 +102,9 @@ export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
+    setUser: (state, action: PayloadAction<User | null>) => {
+      state.user = action.payload;
+    },
     setLocalStream: (state, action: PayloadAction<MediaStream | undefined>) => {
       state.localStream = action.payload;
     },
@@ -146,7 +152,7 @@ export const userSlice = createSlice({
       state.isCameraMirrored = action.payload;
     },
     setTheme: (state, action: PayloadAction<string>) => {
-      document.cookie = `theme=${action.payload}; max-age=1704085200; path=/`;
+      Cookies.set("theme", action.payload, { expires: 365 });
       state.theme = action.payload;
     },
     setFocus: (
@@ -176,6 +182,7 @@ export const userSlice = createSlice({
 });
 
 export const {
+  setUser,
   setLocalStream,
   setRemoteStream,
   stopLocalStream,

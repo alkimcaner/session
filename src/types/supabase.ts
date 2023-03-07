@@ -3,31 +3,22 @@ export interface Database {
     Tables: {
       sessions: {
         Row: {
-          caller_name: string | null;
-          created_at: string | null;
-          ice: any | null;
-          id: number;
-          receiver_name: string | null;
-          sdp: any | null;
-          session_id: string;
+          created_at: string;
+          id: string;
+          name: string;
+          owner: string;
         };
         Insert: {
-          caller_name?: string | null;
-          created_at?: string | null;
-          ice?: any | null;
-          id?: number;
-          receiver_name?: string | null;
-          sdp?: any | null;
-          session_id?: string;
+          created_at?: string;
+          id?: string;
+          name: string;
+          owner: string;
         };
         Update: {
-          caller_name?: string | null;
-          created_at?: string | null;
-          ice?: any | null;
-          id?: number;
-          receiver_name?: string | null;
-          sdp?: any | null;
-          session_id?: string;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          owner?: string;
         };
       };
     };
@@ -38,6 +29,9 @@ export interface Database {
       [_ in never]: never;
     };
     Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
       [_ in never]: never;
     };
   };

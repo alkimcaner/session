@@ -101,7 +101,7 @@ export default function Session() {
               placeholder="Send a message"
               className="input input-bordered w-full"
               value={messageInput}
-              onChange={(ev) => setMessageInput(ev.target.value)}
+              onChange={(e) => setMessageInput(e.target.value)}
               disabled={!userState.remoteStream}
             />
             <input

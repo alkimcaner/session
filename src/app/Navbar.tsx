@@ -1,13 +1,14 @@
 "use client";
 
 import { useAppDispatch, useAppSelector } from "@/hooks";
-import { setTheme } from "@/slices/userSlice";
+import { setTheme, setUser } from "@/slices/userSlice";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BsPalette2, BsPersonFill, BsThreeDots } from "react-icons/bs";
 import { FiSettings } from "react-icons/fi";
 import { MdKeyboardArrowDown, MdLogout } from "react-icons/md";
 import SettingsModal from "./SettingsModal";
+import { useSupabase } from "./SupabaseProvider";
 
 const themes = [
   "light",
@@ -42,9 +43,14 @@ const themes = [
 ];
 
 export default function Navbar() {
+  const [isClient, setIsClient] = useState(false);
   const userState = useAppSelector((state) => state.user);
   const dispatch = useAppDispatch();
-  const [isClient, setIsClient] = useState(false);
+  const { supabase } = useSupabase();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   //Change theme
   useEffect(() => {
@@ -89,31 +95,37 @@ export default function Navbar() {
           </ul>
         </div>
         {/* Profile menu */}
-        <div className="dropdown dropdown-end">
-          <label tabIndex={0} className="btn btn-secondary gap-2">
-            John Doe <BsThreeDots />
-          </label>
-          <ul
-            tabIndex={0}
-            className="dropdown-content menu p-2 shadow-xl bg-base-200 rounded-box w-52"
-          >
-            <li>
-              <Link href="/profile">
-                <BsPersonFill /> Profile
-              </Link>
-            </li>
-            <li>
-              <label htmlFor="my-modal-4">
-                <FiSettings /> Settings
-              </label>
-            </li>
-            <li>
-              <a>
-                <MdLogout /> Logout
-              </a>
-            </li>
-          </ul>
-        </div>
+        {userState.user ? (
+          <div className="dropdown dropdown-end">
+            <label tabIndex={0} className="btn btn-primary gap-2">
+              {userState.user?.email} <BsThreeDots />
+            </label>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu p-2 shadow-xl bg-base-200 rounded-box w-52"
+            >
+              <li>
+                <Link href="/profile">
+                  <BsPersonFill /> Profile
+                </Link>
+              </li>
+              <li>
+                <label htmlFor="my-modal-4">
+                  <FiSettings /> Settings
+                </label>
+              </li>
+              <li>
+                <button onClick={handleSignOut}>
+                  <MdLogout /> Logout
+                </button>
+              </li>
+            </ul>
+          </div>
+        ) : (
+          <Link href="/login" className="btn btn-primary">
+            Log In
+          </Link>
+        )}
       </div>
       {/* Settings Modal */}
       <SettingsModal />
