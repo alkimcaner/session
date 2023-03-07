@@ -1,23 +1,23 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { AppDispatch, RootState } from "../store";
-import {
-  adjectives,
-  animals,
-  colors,
-  Config,
-  uniqueNamesGenerator,
-} from "unique-names-generator";
+import Cookies from "js-cookie";
+import { User } from "@supabase/supabase-js";
 
-const nameGenConfig: Config = {
-  dictionaries: [adjectives, colors, animals],
-  separator: " ",
-  length: 2,
-  style: "capital",
-};
+const theme = Cookies.get("theme");
+let defaultAudioDeviceId;
+let defaultVideoDeviceId;
+let isCameraMirrored;
+
+//Get localstorage
+if (typeof window !== "undefined" && window.localStorage) {
+  defaultAudioDeviceId = localStorage.getItem("defaultAudioDeviceId");
+  defaultVideoDeviceId = localStorage.getItem("defaultVideoDeviceId");
+  isCameraMirrored = localStorage.getItem("isCameraMirrored") === "true";
+}
 
 export interface UserState {
-  name: string;
+  user: User | null;
   localStream: MediaStream | undefined;
   remoteStream: MediaStream | undefined;
   isVideoEnabled: boolean;
@@ -33,7 +33,7 @@ export interface UserState {
 }
 
 const initialState: UserState = {
-  name: "",
+  user: null,
   localStream: undefined,
   remoteStream: undefined,
   isVideoEnabled: true,
@@ -41,10 +41,10 @@ const initialState: UserState = {
   isScreenShareEnabled: false,
   isChatVisible: false,
   isPermissionsGranted: false,
-  defaultAudioDeviceId: "default",
-  defaultVideoDeviceId: "",
-  isCameraMirrored: false,
-  theme: "",
+  defaultAudioDeviceId: defaultAudioDeviceId || "default",
+  defaultVideoDeviceId: defaultVideoDeviceId || "",
+  isCameraMirrored: isCameraMirrored || false,
+  theme: theme || "",
   focus: undefined,
 };
 
@@ -102,13 +102,8 @@ export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setName: (state, action: PayloadAction<string>) => {
-      let name = action.payload;
-      if (!action.payload.length) {
-        name = uniqueNamesGenerator(nameGenConfig);
-      }
-      localStorage.setItem("username", name);
-      state.name = name;
+    setUser: (state, action: PayloadAction<User | null>) => {
+      state.user = action.payload;
     },
     setLocalStream: (state, action: PayloadAction<MediaStream | undefined>) => {
       state.localStream = action.payload;
@@ -157,7 +152,7 @@ export const userSlice = createSlice({
       state.isCameraMirrored = action.payload;
     },
     setTheme: (state, action: PayloadAction<string>) => {
-      localStorage.setItem("theme", action.payload);
+      Cookies.set("theme", action.payload, { expires: 365 });
       state.theme = action.payload;
     },
     setFocus: (
@@ -187,7 +182,7 @@ export const userSlice = createSlice({
 });
 
 export const {
-  setName,
+  setUser,
   setLocalStream,
   setRemoteStream,
   stopLocalStream,
