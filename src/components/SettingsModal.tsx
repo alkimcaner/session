@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import {
   setDefaultAudioDeviceId,
@@ -7,7 +5,7 @@ import {
   setIsCameraMirrored,
   setIsPermissionsGranted,
 } from "../slices/userSlice";
-import { useAppDispatch, useAppSelector } from "../hooks";
+import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
 
 export default function SettingsModal() {
   const userState = useAppSelector((state) => state.user);
