@@ -1,14 +1,12 @@
-"use client";
-
-import { useAppDispatch, useAppSelector } from "@/hooks";
-import { setTheme, setUser } from "@/slices/userSlice";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
+import { setTheme } from "../slices/userSlice";
+import { useEffect } from "react";
 import { BsPalette2, BsPersonFill, BsThreeDots } from "react-icons/bs";
 import { FiSettings } from "react-icons/fi";
 import { MdKeyboardArrowDown, MdLogout } from "react-icons/md";
 import SettingsModal from "./SettingsModal";
-import { useSupabase } from "./SupabaseProvider";
+import { Link } from "react-router-dom";
+import { supabase } from "../supabaseClient";
 
 const themes = [
   "light",
@@ -43,10 +41,8 @@ const themes = [
 ];
 
 export default function Navbar() {
-  const [isClient, setIsClient] = useState(false);
   const userState = useAppSelector((state) => state.user);
   const dispatch = useAppDispatch();
-  const { supabase } = useSupabase();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -57,15 +53,11 @@ export default function Navbar() {
     document.documentElement.setAttribute("data-theme", userState.theme);
   }, [userState.theme]);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   return (
     <nav className="w-full flex justify-center bg-base-100">
       <div className="relative max-w-7xl flex-1 flex items-center gap-4 p-4">
         <Link
-          href="/"
+          to="/"
           className="text-2xl font-extrabold text-primary hover:text-secondary-focus transition-colors mr-auto"
         >
           SESSION
@@ -83,9 +75,7 @@ export default function Navbar() {
               <button
                 key={index}
                 className={`btn ${
-                  isClient && userState.theme === theme
-                    ? "btn-primary"
-                    : "btn-ghost"
+                  userState.theme === theme ? "btn-primary" : "btn-ghost"
                 } justify-start`}
                 onClick={() => dispatch(setTheme(theme))}
               >
@@ -95,17 +85,17 @@ export default function Navbar() {
           </ul>
         </div>
         {/* Profile menu */}
-        {userState.user ? (
+        {userState.userSession?.user ? (
           <div className="dropdown dropdown-end">
             <label tabIndex={0} className="btn btn-primary gap-2">
-              {userState.user?.email} <BsThreeDots />
+              {userState.userSession?.user.email} <BsThreeDots />
             </label>
             <ul
               tabIndex={0}
               className="dropdown-content menu p-2 shadow-xl bg-base-200 rounded-box w-52"
             >
               <li>
-                <Link href="/profile">
+                <Link to="/profile">
                   <BsPersonFill /> Profile
                 </Link>
               </li>
@@ -122,7 +112,7 @@ export default function Navbar() {
             </ul>
           </div>
         ) : (
-          <Link href="/login" className="btn btn-primary">
+          <Link to="/login" className="btn btn-primary">
             Log In
           </Link>
         )}

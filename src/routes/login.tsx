@@ -1,21 +1,19 @@
-"use client";
-
-import { useRouter } from "next/navigation";
-import React, { useRef, useState } from "react";
-import { useSupabase } from "../SupabaseProvider";
+import { useRef, useState } from "react";
+import { Navigate } from "react-router-dom";
+import { supabase } from "../supabaseClient";
+import { useAppSelector } from "../typedReduxHooks";
 
 interface ICredentials {
   email: string;
   password: string;
 }
 
-export default function LoginForm() {
-  const router = useRouter();
-  const { supabase } = useSupabase();
+export default function Login() {
+  const userState = useAppSelector((state) => state.user);
   const [isSignUp, setIsSignUp] = useState(false);
   const [isAlertVisible, setIsAlertVisible] = useState(false);
-  const alertTimeout = useRef<NodeJS.Timeout>();
-  const errorTimeout = useRef<NodeJS.Timeout>();
+  const alertTimeout = useRef<any>();
+  const errorTimeout = useRef<any>();
   const [isError, setIsError] = useState(false);
   const [credentials, setCredentials] = useState<ICredentials>({
     email: "",
@@ -57,14 +55,16 @@ export default function LoginForm() {
         alertTimeout.current = setTimeout(() => {
           setIsAlertVisible(false);
         }, 5000);
-      } else {
-        router.push("/");
       }
     }
   };
 
+  if (userState.userSession?.user) {
+    return <Navigate to="/profile" replace />;
+  }
+
   return (
-    <>
+    <div className="w-full h-screen flex flex-col gap-4 justify-center items-center">
       <div
         className={`alert ${isError && "alert-error"} shadow-lg w-fit fixed ${
           isAlertVisible
@@ -134,6 +134,6 @@ export default function LoginForm() {
           className="btn btn-primary mt-4"
         />
       </form>
-    </>
+    </div>
   );
 }

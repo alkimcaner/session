@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import {
   BsArrowDownShort,
@@ -20,8 +20,8 @@ import {
   setIsVideoEnabled,
   updateLocalStream,
   setFocus,
-} from "../../../slices/userSlice";
-import { useAppDispatch, useAppSelector } from "../../../hooks";
+} from "../slices/userSlice";
+import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
 
 interface IProps {
   pc: React.MutableRefObject<RTCPeerConnection | undefined>;
@@ -142,7 +142,7 @@ export default function ActionBar({ pc }: IProps) {
         </button>
       </li>
       <li className="tooltip" data-tip="Leave session">
-        <Link href="/">
+        <Link to="/">
           <div className="text-lg btn btn-square btn-error">
             <IoCallOutline />
           </div>

@@ -1,23 +1,16 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import type { AppDispatch, RootState } from "../store";
-import Cookies from "js-cookie";
-import { User } from "@supabase/supabase-js";
-
-const theme = Cookies.get("theme");
-let defaultAudioDeviceId;
-let defaultVideoDeviceId;
-let isCameraMirrored;
+import type { Session } from "@supabase/supabase-js";
 
 //Get localstorage
-if (typeof window !== "undefined" && window.localStorage) {
-  defaultAudioDeviceId = localStorage.getItem("defaultAudioDeviceId");
-  defaultVideoDeviceId = localStorage.getItem("defaultVideoDeviceId");
-  isCameraMirrored = localStorage.getItem("isCameraMirrored") === "true";
-}
+const theme = localStorage.getItem("theme");
+const defaultAudioDeviceId = localStorage.getItem("defaultAudioDeviceId");
+const defaultVideoDeviceId = localStorage.getItem("defaultVideoDeviceId");
+const isCameraMirrored = localStorage.getItem("isCameraMirrored") === "true";
 
 export interface UserState {
-  user: User | null;
+  userSession: Session | null;
   localStream: MediaStream | undefined;
   remoteStream: MediaStream | undefined;
   isVideoEnabled: boolean;
@@ -33,7 +26,7 @@ export interface UserState {
 }
 
 const initialState: UserState = {
-  user: null,
+  userSession: null,
   localStream: undefined,
   remoteStream: undefined,
   isVideoEnabled: true,
@@ -102,8 +95,8 @@ export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setUser: (state, action: PayloadAction<User | null>) => {
-      state.user = action.payload;
+    setUserSession: (state, action: PayloadAction<Session | null>) => {
+      state.userSession = action.payload;
     },
     setLocalStream: (state, action: PayloadAction<MediaStream | undefined>) => {
       state.localStream = action.payload;
@@ -152,7 +145,7 @@ export const userSlice = createSlice({
       state.isCameraMirrored = action.payload;
     },
     setTheme: (state, action: PayloadAction<string>) => {
-      Cookies.set("theme", action.payload, { expires: 365 });
+      localStorage.setItem("theme", action.payload);
       state.theme = action.payload;
     },
     setFocus: (
@@ -182,7 +175,7 @@ export const userSlice = createSlice({
 });
 
 export const {
-  setUser,
+  setUserSession,
   setLocalStream,
   setRemoteStream,
   stopLocalStream,

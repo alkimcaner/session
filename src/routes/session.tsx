@@ -1,14 +1,12 @@
-"use client";
-
-import React, { useEffect, useRef, useState } from "react";
-import CamFrame from "./CamFrame";
+import { useEffect, useRef, useState } from "react";
+import CamFrame from "../components/CamFrame";
 import {
   resetState,
   setLocalStream,
   setRemoteStream,
-} from "../../../slices/userSlice";
-import ActionBar from "./ActionBar";
-import { useAppDispatch, useAppSelector } from "../../../hooks";
+} from "../slices/userSlice";
+import ActionBar from "../components/ActionBar";
+import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
 import { Peer } from "peerjs";
 
 interface IRemoteInfo {
