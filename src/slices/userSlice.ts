@@ -1,18 +1,36 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import type { AppDispatch, RootState } from "../store";
-import type { Session } from "@supabase/supabase-js";
+import {
+  colors,
+  animals,
+  Config,
+  uniqueNamesGenerator,
+} from "unique-names-generator";
+
+const nameGenConfig: Config = {
+  dictionaries: [colors, animals],
+  separator: " ",
+  length: 2,
+  style: "capital",
+};
 
 //Get localstorage
+const name = localStorage.getItem("username");
 const theme = localStorage.getItem("theme");
 const defaultAudioDeviceId = localStorage.getItem("defaultAudioDeviceId");
 const defaultVideoDeviceId = localStorage.getItem("defaultVideoDeviceId");
 const isCameraMirrored = localStorage.getItem("isCameraMirrored") === "true";
 
+interface RemoteStream {
+  id: string;
+  stream: MediaStream;
+}
+
 export interface UserState {
-  userSession: Session | null;
+  id: string;
+  name: string;
   localStream: MediaStream | undefined;
-  remoteStream: MediaStream | undefined;
+  remoteStreams: RemoteStream[];
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
   isScreenShareEnabled: boolean;
@@ -22,13 +40,14 @@ export interface UserState {
   defaultVideoDeviceId: string;
   isCameraMirrored: boolean;
   theme: string;
-  focus: "local" | "remote" | undefined;
+  focus: string;
 }
 
 const initialState: UserState = {
-  userSession: null,
+  id: "",
+  name: name || "",
   localStream: undefined,
-  remoteStream: undefined,
+  remoteStreams: [],
   isVideoEnabled: true,
   isAudioEnabled: true,
   isScreenShareEnabled: false,
@@ -38,80 +57,75 @@ const initialState: UserState = {
   defaultVideoDeviceId: defaultVideoDeviceId || "",
   isCameraMirrored: isCameraMirrored || false,
   theme: theme || "",
-  focus: undefined,
+  focus: "",
 };
 
-export const updateLocalStream = createAsyncThunk<
-  MediaStream | undefined,
-  { pc: RTCPeerConnection | undefined; screen: boolean },
-  { dispatch: AppDispatch; state: RootState }
->("user/updateLocalStream", async ({ pc, screen }, { dispatch, getState }) => {
-  try {
-    let stream: MediaStream;
+// export const updateLocalStream = createAsyncThunk<
+//   MediaStream | undefined,
+//   { screen: boolean },
+//   { dispatch: AppDispatch; state: RootState }
+// >("user/updateLocalStream", async ({ screen }, { dispatch, getState }) => {
+//   try {
+//     let stream: MediaStream;
 
-    const videoSender = pc?.getSenders().find((s) => s.track?.kind === "video");
+//     if (screen) {
+//       stream = await navigator.mediaDevices.getDisplayMedia({
+//         video: true,
+//         audio: true,
+//       });
 
-    const audioSender = pc?.getSenders().find((s) => s.track?.kind === "audio");
+//       dispatch(setIsCameraMirrored(false));
+//     } else {
+//       stream = await navigator.mediaDevices.getUserMedia({
+//         video: { deviceId: { ideal: getState().user.defaultVideoDeviceId } },
+//         audio: { deviceId: { ideal: getState().user.defaultAudioDeviceId } },
+//       });
 
-    if (screen) {
-      stream = await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: true,
-      });
+//       dispatch(setIsScreenShareEnabled(false));
+//     }
 
-      dispatch(setIsCameraMirrored(false));
-    } else {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: { ideal: getState().user.defaultVideoDeviceId } },
-        audio: { deviceId: { ideal: getState().user.defaultAudioDeviceId } },
-      });
+//     const videoTrack = stream.getVideoTracks()[0];
+//     const audioTrack = stream.getAudioTracks()[0];
 
-      dispatch(setIsScreenShareEnabled(false));
-    }
+//     //Stop screen share if mediastream ends
+//     videoTrack.onended = () => dispatch(setIsScreenShareEnabled(false));
 
-    const videoTrack = stream.getVideoTracks()[0];
-    const audioTrack = stream.getAudioTracks()[0];
-
-    //Stop screen share if mediastream ends
-    videoTrack.onended = () => dispatch(setIsScreenShareEnabled(false));
-
-    //Stop stream
-    dispatch(stopLocalStream());
-
-    //Replace video track
-    videoSender?.replaceTrack(videoTrack);
-
-    //Replace audio track
-    audioSender?.replaceTrack(audioTrack);
-
-    return stream;
-  } catch (err) {
-    dispatch(setIsScreenShareEnabled(false));
-    console.error(err);
-  }
-});
+//     return stream;
+//   } catch (err) {
+//     dispatch(setIsScreenShareEnabled(false));
+//     console.error(err);
+//   }
+// });
 
 export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setUserSession: (state, action: PayloadAction<Session | null>) => {
-      state.userSession = action.payload;
+    setId: (state, action: PayloadAction<string>) => {
+      state.id = action.payload;
+    },
+    setName: (state, action: PayloadAction<string>) => {
+      let name = action.payload;
+      if (!action.payload.length) {
+        name = uniqueNamesGenerator(nameGenConfig);
+      }
+      localStorage.setItem("username", name);
+      state.name = name;
     },
     setLocalStream: (state, action: PayloadAction<MediaStream | undefined>) => {
+      state.localStream?.getTracks().forEach((track) => track.stop());
       state.localStream = action.payload;
     },
-    setRemoteStream: (
-      state,
-      action: PayloadAction<MediaStream | undefined>
-    ) => {
-      state.remoteStream = action.payload;
-    },
-    stopLocalStream: (state) => {
-      state.localStream?.getTracks().forEach((track) => track.stop());
-    },
-    stopRemoteStream: (state) => {
-      state.remoteStream?.getTracks().forEach((track) => track.stop());
+    addRemoteStream: (state, action: PayloadAction<RemoteStream>) => {
+      const streamIndex = state.remoteStreams.findIndex(
+        (remoteStream) => remoteStream.id === action.payload.id
+      );
+      console.log("add stream");
+      if (streamIndex) {
+        state.remoteStreams[streamIndex] = action.payload;
+        return;
+      }
+      state.remoteStreams.push(action.payload);
     },
     setIsVideoEnabled: (state, action: PayloadAction<boolean>) => {
       if (!state.localStream || !state.localStream.getVideoTracks()[0]) return;
@@ -148,38 +162,30 @@ export const userSlice = createSlice({
       localStorage.setItem("theme", action.payload);
       state.theme = action.payload;
     },
-    setFocus: (
-      state,
-      action: PayloadAction<"local" | "remote" | undefined>
-    ) => {
+    setFocus: (state, action: PayloadAction<string>) => {
       state.focus = action.payload;
     },
     resetState: (state) => {
       state.localStream?.getTracks().forEach((track) => track.stop());
-      state.remoteStream?.getTracks().forEach((track) => track.stop());
+      state.remoteStreams.forEach((remoteStream) =>
+        remoteStream.stream.getTracks().forEach((track) => track.stop())
+      );
       state.localStream = undefined;
-      state.remoteStream = undefined;
+      state.remoteStreams = [];
       state.isScreenShareEnabled = false;
       state.isChatVisible = false;
       state.isVideoEnabled = true;
       state.isAudioEnabled = true;
-      state.focus = undefined;
+      state.focus = "";
     },
-  },
-  extraReducers(builder) {
-    builder.addCase(updateLocalStream.fulfilled, (state, action) => {
-      if (!action.payload) return;
-      state.localStream = action.payload;
-    });
   },
 });
 
 export const {
-  setUserSession,
+  setId,
+  setName,
   setLocalStream,
-  setRemoteStream,
-  stopLocalStream,
-  stopRemoteStream,
+  addRemoteStream,
   setIsVideoEnabled,
   setIsAudioEnabled,
   setIsChatVisible,

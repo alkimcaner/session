@@ -29,21 +29,9 @@ export default function CamFrame({
     videoRef.current.srcObject = stream;
   }, [stream]);
 
-  const frameSize = () => {
-    if (userState.focus === "local" && local) {
-      return "sm:max-w-[75%]";
-    } else if (userState.focus === "remote" && !local) {
-      return "sm:max-w-[75%]";
-    } else if (userState.focus === undefined) {
-      return "sm:max-w-[50%]";
-    } else {
-      return "sm:max-w-[25%]";
-    }
-  };
-
   return (
     <div
-      className={`group relative flex-1 ${frameSize()} w-full h-full aspect-video bg-base-300 rounded-btn overflow-hidden flex justify-center items-center shadow-lg`}
+      className={`group relative aspect-video bg-base-300 rounded-btn overflow-hidden flex justify-center items-center shadow-lg`}
     >
       <video
         ref={videoRef}

@@ -18,7 +18,6 @@ import {
   setIsChatVisible,
   setIsAudioEnabled,
   setIsVideoEnabled,
-  updateLocalStream,
   setFocus,
 } from "../slices/userSlice";
 import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
@@ -27,7 +26,7 @@ interface IProps {
   pc: React.MutableRefObject<RTCPeerConnection | undefined>;
 }
 
-export default function ActionBar({ pc }: IProps) {
+export default function ActionBar() {
   const [copyTooltip, setCopyTooltip] = useState("Copy session link");
   const userState = useAppSelector((state) => state.user);
   const dispatch = useAppDispatch();
@@ -43,19 +42,19 @@ export default function ActionBar({ pc }: IProps) {
     }
   };
 
-  //Update the local stream when the default device changes
-  useEffect(() => {
-    dispatch(updateLocalStream({ pc: pc.current, screen: false }));
-  }, [userState.defaultAudioDeviceId, userState.defaultVideoDeviceId]);
+  // //Update the local stream when the default device changes
+  // useEffect(() => {
+  //   dispatch(updateLocalStream({ screen: false }));
+  // }, [userState.defaultAudioDeviceId, userState.defaultVideoDeviceId]);
 
-  //Update the local stream when the screen share state changes
-  useEffect(() => {
-    if (userState.isScreenShareEnabled) {
-      dispatch(updateLocalStream({ pc: pc.current, screen: true }));
-    } else {
-      dispatch(updateLocalStream({ pc: pc.current, screen: false }));
-    }
-  }, [userState.isScreenShareEnabled]);
+  // //Update the local stream when the screen share state changes
+  // useEffect(() => {
+  //   if (userState.isScreenShareEnabled) {
+  //     dispatch(updateLocalStream({ screen: true }));
+  //   } else {
+  //     dispatch(updateLocalStream({ screen: false }));
+  //   }
+  // }, [userState.isScreenShareEnabled]);
 
   return (
     <ul

@@ -3,37 +3,23 @@ import { store } from "./store";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Root from "./routes/root";
 import Home from "./routes/home";
-import Login from "./routes/login";
-import Profile from "./routes/profile";
 import Session from "./routes/session";
+import NotFound from "./routes/not-found";
 import { useEffect } from "react";
-import { supabase } from "./supabaseClient";
-import { setUserSession } from "./slices/userSlice";
-import ProtectedRoute from "./routes/protected-route";
+import { setName } from "./slices/userSlice";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <Root />,
+    errorElement: <NotFound />,
     children: [
       {
         index: true,
         element: <Home />,
       },
       {
-        path: "/login",
-        element: <Login />,
-      },
-      {
-        path: "/profile",
-        element: (
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "/sessions/:sessionId",
+        path: "session/:sessionId",
         element: <Session />,
       },
     ],
@@ -42,13 +28,9 @@ const router = createBrowserRouter([
 
 export default function App() {
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      store.dispatch(setUserSession(session));
-    });
-
-    supabase.auth.onAuthStateChange((_event, session) => {
-      store.dispatch(setUserSession(session));
-    });
+    if (!localStorage.getItem("username")) {
+      store.dispatch(setName(""));
+    }
   }, []);
 
   return (

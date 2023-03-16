@@ -5,11 +5,10 @@
 Built with:
 
 - WebRTC
-- Next.js
+- PeerJS
 - React
 - Redux
 - Typescript
-- PostgreSQL
 - Supabase
 - Tailwindcss
 

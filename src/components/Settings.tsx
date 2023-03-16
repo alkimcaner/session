@@ -1,17 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent, useRef } from "react";
+import { FiEdit, FiSettings } from "react-icons/fi";
+import { TiTick } from "react-icons/ti";
 import {
   setDefaultAudioDeviceId,
   setDefaultVideoDeviceId,
   setIsCameraMirrored,
   setIsPermissionsGranted,
+  setName,
 } from "../slices/userSlice";
 import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
 
 export default function SettingsModal() {
   const userState = useAppSelector((state) => state.user);
   const dispatch = useAppDispatch();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [isNameEditable, setIsNameEditable] = useState(false);
   const [audioDevices, setAudioDevices] = useState<InputDeviceInfo[]>();
   const [videoDevices, setVideoDevices] = useState<InputDeviceInfo[]>();
+
+  const handleSetName = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (isNameEditable) {
+      dispatch(setName(inputRef.current?.value || ""));
+    }
+    setIsNameEditable((prev) => !prev);
+  };
 
   //Grant permission
   const handleGrantPermission = async () => {
@@ -86,10 +100,34 @@ export default function SettingsModal() {
 
   return (
     <div>
+      <label htmlFor="my-modal-4" className="btn btn-primary gap-2">
+        <FiSettings /> Settings
+      </label>
       <input type="checkbox" id="my-modal-4" className="modal-toggle" />
       <label htmlFor="my-modal-4" className="modal cursor-pointer">
         <label className="modal-box relative" htmlFor="">
           <h3 className="text-lg font-bold pb-4">Settings</h3>
+          <div className="flex justify-between items-center py-4">
+            <span>Username</span>
+            <form onSubmit={handleSetName} className="form-control">
+              <div className="input-group input-group-sm">
+                {isNameEditable ? (
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="Enter name"
+                    className="input input-primary input-sm w-full max-w-[12rem]"
+                  />
+                ) : (
+                  <span>{userState.name}</span>
+                )}
+
+                <button type="submit" className="btn btn-sm">
+                  {isNameEditable ? <TiTick /> : <FiEdit />}
+                </button>
+              </div>
+            </form>
+          </div>
           <div className="flex justify-between items-center py-4">
             <span>Default Microphone</span>
             {userState.isPermissionsGranted ? (
