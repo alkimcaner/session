@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   BsArrowDownShort,
   BsArrowUpShort,
@@ -22,10 +22,6 @@ import {
 } from "../slices/userSlice";
 import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
 
-interface IProps {
-  pc: React.MutableRefObject<RTCPeerConnection | undefined>;
-}
-
 export default function ActionBar() {
   const [copyTooltip, setCopyTooltip] = useState("Copy session link");
   const userState = useAppSelector((state) => state.user);
@@ -41,20 +37,6 @@ export default function ActionBar() {
       console.error(err);
     }
   };
-
-  // //Update the local stream when the default device changes
-  // useEffect(() => {
-  //   dispatch(updateLocalStream({ screen: false }));
-  // }, [userState.defaultAudioDeviceId, userState.defaultVideoDeviceId]);
-
-  // //Update the local stream when the screen share state changes
-  // useEffect(() => {
-  //   if (userState.isScreenShareEnabled) {
-  //     dispatch(updateLocalStream({ screen: true }));
-  //   } else {
-  //     dispatch(updateLocalStream({ screen: false }));
-  //   }
-  // }, [userState.isScreenShareEnabled]);
 
   return (
     <ul

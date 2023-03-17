@@ -21,16 +21,20 @@ const defaultAudioDeviceId = localStorage.getItem("defaultAudioDeviceId");
 const defaultVideoDeviceId = localStorage.getItem("defaultVideoDeviceId");
 const isCameraMirrored = localStorage.getItem("isCameraMirrored") === "true";
 
-interface RemoteStream {
+interface RemotePeer {
   id: string;
-  stream: MediaStream;
+  stream: MediaStream | undefined;
+  name: string;
+  isVideoEnabled: boolean;
+  isAudioEnabled: boolean;
+  isCameraMirrored: boolean;
 }
 
 export interface UserState {
-  id: string;
+  id: string | undefined;
   name: string;
   localStream: MediaStream | undefined;
-  remoteStreams: RemoteStream[];
+  remotePeers: RemotePeer[];
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
   isScreenShareEnabled: boolean;
@@ -40,14 +44,14 @@ export interface UserState {
   defaultVideoDeviceId: string;
   isCameraMirrored: boolean;
   theme: string;
-  focus: string;
+  focus: string | undefined;
 }
 
 const initialState: UserState = {
-  id: "",
+  id: undefined,
   name: name || "",
   localStream: undefined,
-  remoteStreams: [],
+  remotePeers: [],
   isVideoEnabled: true,
   isAudioEnabled: true,
   isScreenShareEnabled: false,
@@ -57,7 +61,7 @@ const initialState: UserState = {
   defaultVideoDeviceId: defaultVideoDeviceId || "",
   isCameraMirrored: isCameraMirrored || false,
   theme: theme || "",
-  focus: "",
+  focus: undefined,
 };
 
 // export const updateLocalStream = createAsyncThunk<
@@ -101,7 +105,7 @@ export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setId: (state, action: PayloadAction<string>) => {
+    setId: (state, action: PayloadAction<string | undefined>) => {
       state.id = action.payload;
     },
     setName: (state, action: PayloadAction<string>) => {
@@ -116,16 +120,28 @@ export const userSlice = createSlice({
       state.localStream?.getTracks().forEach((track) => track.stop());
       state.localStream = action.payload;
     },
-    addRemoteStream: (state, action: PayloadAction<RemoteStream>) => {
-      const streamIndex = state.remoteStreams.findIndex(
-        (remoteStream) => remoteStream.id === action.payload.id
+    addRemotePeer: (state, action: PayloadAction<RemotePeer>) => {
+      const peerIndex = state.remotePeers.findIndex(
+        (remotePeer) => remotePeer.id === action.payload.id
       );
-      console.log("add stream");
-      if (streamIndex) {
-        state.remoteStreams[streamIndex] = action.payload;
-        return;
+
+      if (peerIndex !== -1) {
+        if (!action.payload.stream) {
+          state.remotePeers[peerIndex] = {
+            ...action.payload,
+            stream: state.remotePeers[peerIndex].stream,
+          };
+        } else {
+          state.remotePeers[peerIndex] = action.payload;
+        }
+      } else {
+        state.remotePeers.push(action.payload);
       }
-      state.remoteStreams.push(action.payload);
+    },
+    removeRemotePeer: (state, action: PayloadAction<string>) => {
+      state.remotePeers = state.remotePeers.filter(
+        (remotePeer) => remotePeer.id !== action.payload
+      );
     },
     setIsVideoEnabled: (state, action: PayloadAction<boolean>) => {
       if (!state.localStream || !state.localStream.getVideoTracks()[0]) return;
@@ -162,21 +178,22 @@ export const userSlice = createSlice({
       localStorage.setItem("theme", action.payload);
       state.theme = action.payload;
     },
-    setFocus: (state, action: PayloadAction<string>) => {
+    setFocus: (state, action: PayloadAction<string | undefined>) => {
       state.focus = action.payload;
     },
     resetState: (state) => {
       state.localStream?.getTracks().forEach((track) => track.stop());
-      state.remoteStreams.forEach((remoteStream) =>
-        remoteStream.stream.getTracks().forEach((track) => track.stop())
+      state.remotePeers.forEach((remotePeer) =>
+        remotePeer.stream?.getTracks().forEach((track) => track.stop())
       );
       state.localStream = undefined;
-      state.remoteStreams = [];
+      state.remotePeers = [];
       state.isScreenShareEnabled = false;
       state.isChatVisible = false;
       state.isVideoEnabled = true;
       state.isAudioEnabled = true;
-      state.focus = "";
+      state.focus = undefined;
+      state.id = undefined;
     },
   },
 });
@@ -185,7 +202,8 @@ export const {
   setId,
   setName,
   setLocalStream,
-  addRemoteStream,
+  addRemotePeer,
+  removeRemotePeer,
   setIsVideoEnabled,
   setIsAudioEnabled,
   setIsChatVisible,

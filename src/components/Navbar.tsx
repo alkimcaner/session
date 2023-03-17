@@ -48,40 +48,40 @@ export default function Navbar() {
   }, [userState.theme]);
 
   return (
-    <nav className="w-full flex justify-center bg-base-100">
-      <div className="relative max-w-5xl flex-1 flex items-center gap-4 p-4">
-        <Link
-          to="/"
-          className="text-2xl font-extrabold text-primary hover:text-secondary-focus transition-colors mr-auto"
+    <nav className="w-full flex justify-center items-center p-4 gap-4 max-w-5xl mx-auto">
+      <Link
+        to="/"
+        className="text-2xl font-extrabold text-primary hover:text-secondary-focus transition-colors mr-auto"
+      >
+        SESSION
+      </Link>
+      {/* Theme Menu */}
+      <div className="dropdown dropdown-end">
+        <label tabIndex={0} className="btn btn-ghost gap-2">
+          <BsPalette2 />
+          <span className="hidden sm:inline">Theme</span>
+          <MdKeyboardArrowDown />
+        </label>
+        <ul
+          tabIndex={0}
+          className="dropdown-content p-2 pr-4 shadow-xl bg-base-200 rounded-box w-48 h-64 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-primary grid grid-cols-1"
         >
-          SESSION
-        </Link>
-        {/* Theme Menu */}
-        <div className="dropdown dropdown-end">
-          <label tabIndex={0} className="btn btn-ghost gap-2">
-            <BsPalette2 /> Theme <MdKeyboardArrowDown />
-          </label>
-          <ul
-            tabIndex={0}
-            className="dropdown-content p-2 pr-4 shadow-xl bg-base-200 rounded-box w-48 h-64 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-primary grid grid-cols-1"
-          >
-            {themes.map((theme, index) => (
-              <li key={index}>
-                <button
-                  className={`btn ${
-                    userState.theme === theme ? "btn-primary" : "btn-ghost"
-                  } justify-start w-full`}
-                  onClick={() => dispatch(setTheme(theme))}
-                >
-                  {theme}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <Settings />
+          {themes.map((theme, index) => (
+            <li key={index}>
+              <button
+                className={`btn ${
+                  userState.theme === theme ? "btn-primary" : "btn-ghost"
+                } justify-start w-full`}
+                onClick={() => dispatch(setTheme(theme))}
+              >
+                {theme}
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
+
+      <Settings />
     </nav>
   );
 }

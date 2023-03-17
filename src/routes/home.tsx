@@ -35,7 +35,7 @@ export default function Home() {
   return (
     <main className="flex-1 max-w-7xl mx-auto flex flex-col lg:flex-row justify-center items-center gap-16 p-4">
       <div className="flex flex-col gap-8 justify-center">
-        <h1 className="text-6xl text-primary font-bold">
+        <h1 className="text-5xl text-primary font-bold">
           High quality video calls for ✨
           <span className="text-yellow-400">free</span>✨
         </h1>
@@ -43,7 +43,7 @@ export default function Home() {
           Got tired of subscriptions? Call anyone without thinking about montly
           plans. Session is free of charge.
         </p>
-        <div className="flex items-center gap-4 w-fit">
+        <div className="flex items-center gap-4 w-fit flex-wrap">
           <button onClick={handleCreate} className="btn btn-primary gap-2">
             <BsCameraVideo />
             New Session

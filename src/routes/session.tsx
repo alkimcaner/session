@@ -3,22 +3,15 @@ import CamFrame from "../components/CamFrame";
 import {
   resetState,
   setLocalStream,
-  addRemoteStream,
+  addRemotePeer,
   setId,
+  removeRemotePeer,
 } from "../slices/userSlice";
 import ActionBar from "../components/ActionBar";
 import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
 import { Peer } from "peerjs";
 import { supabase } from "../supabaseClient";
 import { useParams } from "react-router-dom";
-
-interface IRemoteInfo {
-  isAudioEnabled: boolean;
-  isVideoEnabled: boolean;
-  isCameraMirrored: boolean;
-  isConnected: boolean;
-  name: string;
-}
 
 interface IChatMessage {
   user: string;
@@ -32,14 +25,15 @@ export default function Session() {
   const chatElementRef = useRef<HTMLUListElement>(null);
   const [messageInput, setMessageInput] = useState("");
   const [messages, setMessages] = useState<IChatMessage[]>([]);
-  const [remoteInfo, setRemoteMeta] = useState<IRemoteInfo>({
-    isAudioEnabled: true,
-    isVideoEnabled: true,
-    isCameraMirrored: false,
-    isConnected: true,
-    name: "",
-  });
   const [peer] = useState(new Peer());
+  const channel = useRef(supabase.channel(params.sessionId!));
+
+  useEffect(() => {
+    channel.current.subscribe();
+    return () => {
+      channel.current.unsubscribe();
+    };
+  }, []);
 
   // Scroll chat
   useEffect(() => {
@@ -50,10 +44,9 @@ export default function Session() {
 
   // Get the user ID from PeerJS and set it to state
   useEffect(() => {
-    peer.on("open", (id) => {
-      dispatch(setId(id));
-    });
-  }, []);
+    if (!peer.id) return;
+    dispatch(setId(peer.id));
+  }, [peer.id]);
 
   // Get mediastream
   useEffect(() => {
@@ -73,75 +66,159 @@ export default function Session() {
   useEffect(() => {
     if (!params.sessionId || !userState.id || !userState.localStream) return;
 
-    const channel = supabase.channel(params.sessionId);
-
     peer.on("error", (err) => {
-      console.log(err);
+      console.error(err);
     });
+
+    // Listen for data connection
+    peer.on("connection", (conn) => {
+      // Remove peer on close
+      conn.on("close", () => dispatch(removeRemotePeer(conn.peer)));
+    });
+
+    // Destroy the connection when the user closes browser tab
+    window.onbeforeunload = () => peer.destroy();
 
     // If someone calls you, answer with your stream
     peer.on("call", (call) => {
-      console.log("call received");
       call.answer(userState.localStream);
       call.on("stream", (remoteStream) => {
-        dispatch(addRemoteStream({ id: call.peer, stream: remoteStream }));
+        dispatch(
+          addRemotePeer({
+            id: call.peer,
+            stream: remoteStream,
+            name: "",
+            isVideoEnabled: false,
+            isAudioEnabled: false,
+            isCameraMirrored: false,
+          })
+        );
+        // Send data
+        setTimeout(() => {
+          channel.current.send({
+            type: "broadcast",
+            event: "data",
+            payload: {
+              id: userState.id,
+              name: userState.name,
+              isVideoEnabled: userState.isVideoEnabled,
+              isAudioEnabled: userState.isAudioEnabled,
+              isCameraMirrored: userState.isCameraMirrored,
+            },
+          });
+        }, 500);
       });
     });
 
-    channel.on("broadcast", { event: "join" }, ({ payload }) => {
-      console.log("joined: ", payload.peerId);
+    channel.current.on("broadcast", { event: "join" }, ({ payload }) => {
       // If another user joins the channel, call them with your stream
-      if (payload.peerId !== userState.id && userState.localStream) {
-        const call = peer.call(payload.peerId, userState.localStream);
+      if (payload !== userState.id && userState.localStream) {
+        // Start a data connection
+        const conn = peer.connect(payload);
+        // Remove peer on close
+        conn.on("close", () => dispatch(removeRemotePeer(payload)));
+        // Call
+        const call = peer.call(payload, userState.localStream);
         call.on("stream", (remoteStream) => {
           dispatch(
-            addRemoteStream({ id: payload.peerId, stream: remoteStream })
+            addRemotePeer({
+              id: payload,
+              stream: remoteStream,
+              name: "",
+              isVideoEnabled: false,
+              isAudioEnabled: false,
+              isCameraMirrored: false,
+            })
           );
+          // Send data
+          setTimeout(() => {
+            channel.current.send({
+              type: "broadcast",
+              event: "data",
+              payload: {
+                id: userState.id,
+                name: userState.name,
+                isVideoEnabled: userState.isVideoEnabled,
+                isAudioEnabled: userState.isAudioEnabled,
+                isCameraMirrored: userState.isCameraMirrored,
+              },
+            });
+          }, 500);
         });
       }
     });
 
-    channel.subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        // If you successfully subscribed to the channel, send a join message with your user ID
-        channel.send({
-          type: "broadcast",
-          event: "join",
-          payload: { peerId: userState.id },
-        });
-      }
+    channel.current.on("broadcast", { event: "data" }, ({ payload }) => {
+      // If another user sends data event, update the state
+      dispatch(
+        addRemotePeer({
+          id: payload.id,
+          stream: undefined,
+          name: payload.name,
+          isVideoEnabled: payload.isVideoEnabled,
+          isAudioEnabled: payload.isAudioEnabled,
+          isCameraMirrored: payload.isCameraMirrored,
+        })
+      );
+    });
+
+    // If you successfully subscribed to the channel, send a join message with your user ID
+    channel.current.send({
+      type: "broadcast",
+      event: "join",
+      payload: userState.id,
     });
 
     return () => {
-      channel.unsubscribe();
       dispatch(resetState());
       peer.destroy();
     };
   }, [params.sessionId, userState.id, userState.localStream]);
 
+  // Send data when the state has changed
+  useEffect(() => {
+    if (!userState.id) return;
+    channel.current.send({
+      type: "broadcast",
+      event: "data",
+      payload: {
+        id: userState.id,
+        name: userState.name,
+        isVideoEnabled: userState.isVideoEnabled,
+        isAudioEnabled: userState.isAudioEnabled,
+        isCameraMirrored: userState.isCameraMirrored,
+      },
+    });
+  }, [
+    userState.id,
+    userState.name,
+    userState.isVideoEnabled,
+    userState.isAudioEnabled,
+    userState.isCameraMirrored,
+  ]);
+
   return (
-    <main className="flex-1 flex items-center justify-center px-4">
-      <div className="grid grid-cols-3 grid-rows-3 justify-center gap-4 w-full h-full">
-        {userState.localStream ? (
+    <main className="flex-1 flex items-center justify-center">
+      <div className="grid grid-cols-3 justify-center gap-4 px-4 h-full w-full">
+        {userState.localStream && (
           <CamFrame
-            username="John Doe"
+            username={userState.name}
             stream={userState.localStream}
             isAudioEnabled={userState.isAudioEnabled}
             isVideoEnabled={userState.isVideoEnabled}
             mirror={userState.isCameraMirrored}
             local
           />
-        ) : (
-          <img src="/loading.svg" alt="loading" />
         )}
-        {userState.remoteStreams.map((remoteStream, index) => (
+
+        {userState.remotePeers.map((remotePeer) => (
           <CamFrame
-            key={index}
-            username={remoteInfo.name}
-            stream={remoteStream.stream}
-            isAudioEnabled={remoteInfo.isAudioEnabled}
-            isVideoEnabled={remoteInfo.isVideoEnabled}
-            mirror={remoteInfo.isCameraMirrored}
+            key={remotePeer.id}
+            username={remotePeer.name}
+            stream={remotePeer.stream}
+            isAudioEnabled={remotePeer.isAudioEnabled}
+            isVideoEnabled={remotePeer.isVideoEnabled}
+            mirror={remotePeer.isCameraMirrored}
           />
         ))}
       </div>
@@ -169,13 +246,13 @@ export default function Session() {
               className="input input-bordered w-full"
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
-              disabled={!userState.remoteStreams.length}
+              disabled={!userState.remotePeers.length}
             />
             <input
               type="submit"
               value="Chat"
               className="btn btn-square"
-              disabled={!userState.remoteStreams.length}
+              disabled={!userState.remotePeers.length}
             ></input>
           </div>
         </form>

@@ -5,7 +5,7 @@ import { setFocus } from "../slices/userSlice";
 
 interface IProps {
   username: string;
-  stream: MediaStream;
+  stream: MediaStream | undefined;
   isAudioEnabled: boolean;
   isVideoEnabled: boolean;
   mirror: boolean;
@@ -25,8 +25,9 @@ export default function CamFrame({
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !stream) return;
     videoRef.current.srcObject = stream;
+    videoRef.current.play();
   }, [stream]);
 
   return (

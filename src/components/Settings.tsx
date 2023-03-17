@@ -101,7 +101,8 @@ export default function SettingsModal() {
   return (
     <div>
       <label htmlFor="my-modal-4" className="btn btn-primary gap-2">
-        <FiSettings /> Settings
+        <FiSettings />
+        <span className="hidden sm:inline">Settings</span>
       </label>
       <input type="checkbox" id="my-modal-4" className="modal-toggle" />
       <label htmlFor="my-modal-4" className="modal cursor-pointer">
