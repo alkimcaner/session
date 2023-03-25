@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import {
   colors,
@@ -6,6 +6,7 @@ import {
   Config,
   uniqueNamesGenerator,
 } from "unique-names-generator";
+import { AppDispatch, RootState } from "../store";
 
 const nameGenConfig: Config = {
   dictionaries: [colors, animals],
@@ -33,7 +34,6 @@ interface RemotePeer {
 export interface UserState {
   id: string | undefined;
   name: string;
-  localStream: MediaStream | undefined;
   remotePeers: RemotePeer[];
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
@@ -50,7 +50,6 @@ export interface UserState {
 const initialState: UserState = {
   id: undefined,
   name: name || "",
-  localStream: undefined,
   remotePeers: [],
   isVideoEnabled: true,
   isAudioEnabled: true,
@@ -63,43 +62,6 @@ const initialState: UserState = {
   theme: theme || "",
   focus: undefined,
 };
-
-// export const updateLocalStream = createAsyncThunk<
-//   MediaStream | undefined,
-//   { screen: boolean },
-//   { dispatch: AppDispatch; state: RootState }
-// >("user/updateLocalStream", async ({ screen }, { dispatch, getState }) => {
-//   try {
-//     let stream: MediaStream;
-
-//     if (screen) {
-//       stream = await navigator.mediaDevices.getDisplayMedia({
-//         video: true,
-//         audio: true,
-//       });
-
-//       dispatch(setIsCameraMirrored(false));
-//     } else {
-//       stream = await navigator.mediaDevices.getUserMedia({
-//         video: { deviceId: { ideal: getState().user.defaultVideoDeviceId } },
-//         audio: { deviceId: { ideal: getState().user.defaultAudioDeviceId } },
-//       });
-
-//       dispatch(setIsScreenShareEnabled(false));
-//     }
-
-//     const videoTrack = stream.getVideoTracks()[0];
-//     const audioTrack = stream.getAudioTracks()[0];
-
-//     //Stop screen share if mediastream ends
-//     videoTrack.onended = () => dispatch(setIsScreenShareEnabled(false));
-
-//     return stream;
-//   } catch (err) {
-//     dispatch(setIsScreenShareEnabled(false));
-//     console.error(err);
-//   }
-// });
 
 export const userSlice = createSlice({
   name: "user",
@@ -115,10 +77,6 @@ export const userSlice = createSlice({
       }
       localStorage.setItem("username", name);
       state.name = name;
-    },
-    setLocalStream: (state, action: PayloadAction<MediaStream | undefined>) => {
-      state.localStream?.getTracks().forEach((track) => track.stop());
-      state.localStream = action.payload;
     },
     addRemotePeer: (state, action: PayloadAction<RemotePeer>) => {
       const peerIndex = state.remotePeers.findIndex(
@@ -144,13 +102,9 @@ export const userSlice = createSlice({
       );
     },
     setIsVideoEnabled: (state, action: PayloadAction<boolean>) => {
-      if (!state.localStream || !state.localStream.getVideoTracks()[0]) return;
-      state.localStream.getVideoTracks()[0].enabled = action.payload;
       state.isVideoEnabled = action.payload;
     },
     setIsAudioEnabled: (state, action: PayloadAction<boolean>) => {
-      if (!state.localStream || !state.localStream.getAudioTracks()[0]) return;
-      state.localStream.getAudioTracks()[0].enabled = action.payload;
       state.isAudioEnabled = action.payload;
     },
     setIsChatVisible: (state, action: PayloadAction<boolean>) => {
@@ -182,11 +136,9 @@ export const userSlice = createSlice({
       state.focus = action.payload;
     },
     resetState: (state) => {
-      state.localStream?.getTracks().forEach((track) => track.stop());
       state.remotePeers.forEach((remotePeer) =>
         remotePeer.stream?.getTracks().forEach((track) => track.stop())
       );
-      state.localStream = undefined;
       state.remotePeers = [];
       state.isScreenShareEnabled = false;
       state.isChatVisible = false;
@@ -201,7 +153,6 @@ export const userSlice = createSlice({
 export const {
   setId,
   setName,
-  setLocalStream,
   addRemotePeer,
   removeRemotePeer,
   setIsVideoEnabled,

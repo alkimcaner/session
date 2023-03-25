@@ -8,7 +8,7 @@ import {
   setIsPermissionsGranted,
   setName,
 } from "../slices/userSlice";
-import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
+import { useAppDispatch, useAppSelector } from "../hooks/typedReduxHooks";
 
 export default function SettingsModal() {
   const userState = useAppSelector((state) => state.user);

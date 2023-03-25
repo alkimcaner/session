@@ -1,4 +1,4 @@
-import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
+import { useAppDispatch, useAppSelector } from "../hooks/typedReduxHooks";
 import { setTheme } from "../slices/userSlice";
 import { useEffect } from "react";
 import { BsPalette2 } from "react-icons/bs";

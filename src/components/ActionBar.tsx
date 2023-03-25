@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import React, { useState } from "react";
 import {
   BsArrowDownShort,
@@ -20,19 +20,21 @@ import {
   setIsVideoEnabled,
   setFocus,
 } from "../slices/userSlice";
-import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
+import { useAppDispatch, useAppSelector } from "../hooks/typedReduxHooks";
 
 export default function ActionBar() {
-  const [copyTooltip, setCopyTooltip] = useState("Copy session link");
+  const [copyTooltip, setCopyTooltip] = useState("Copy session code");
   const userState = useAppSelector((state) => state.user);
   const dispatch = useAppDispatch();
+  const params = useParams();
   const [isHidden, setIsHidden] = useState(false);
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      if (!params.sessionId) return;
+      await navigator.clipboard.writeText(params.sessionId);
       setCopyTooltip("Copied!");
-      setTimeout(() => setCopyTooltip("Copy session link"), 1000);
+      setTimeout(() => setCopyTooltip("Copy session code"), 1000);
     } catch (err) {
       console.error(err);
     }

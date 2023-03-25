@@ -2,16 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import CamFrame from "../components/CamFrame";
 import {
   resetState,
-  setLocalStream,
   addRemotePeer,
   setId,
   removeRemotePeer,
 } from "../slices/userSlice";
 import ActionBar from "../components/ActionBar";
-import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
-import { Peer } from "peerjs";
+import { useAppDispatch, useAppSelector } from "../hooks/typedReduxHooks";
+import { MediaConnection, Peer } from "peerjs";
 import { supabase } from "../supabaseClient";
 import { useParams } from "react-router-dom";
+import useMediaStream from "../hooks/useMediaStream";
 
 interface IChatMessage {
   user: string;
@@ -25,15 +25,10 @@ export default function Session() {
   const chatElementRef = useRef<HTMLUListElement>(null);
   const [messageInput, setMessageInput] = useState("");
   const [messages, setMessages] = useState<IChatMessage[]>([]);
-  const [peer] = useState(new Peer());
+  const peer = useRef<Peer>(new Peer());
   const channel = useRef(supabase.channel(params.sessionId!));
-
-  useEffect(() => {
-    channel.current.subscribe();
-    return () => {
-      channel.current.unsubscribe();
-    };
-  }, []);
+  const mediaConnections = useRef<MediaConnection[]>([]);
+  const localStream = useMediaStream();
 
   // Scroll chat
   useEffect(() => {
@@ -42,46 +37,46 @@ export default function Session() {
     });
   }, [messages]);
 
-  // Get the user ID from PeerJS and set it to state
   useEffect(() => {
-    if (!peer.id) return;
-    dispatch(setId(peer.id));
-  }, [peer.id]);
-
-  // Get mediastream
-  useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({
-        video: { deviceId: { ideal: userState.defaultVideoDeviceId } },
-        audio: { deviceId: { ideal: userState.defaultAudioDeviceId } },
-      })
-      .then((stream) => {
-        dispatch(setLocalStream(stream));
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    channel.current.subscribe();
+    return () => {
+      channel.current.unsubscribe();
+      dispatch(resetState());
+      peer.current.destroy();
+    };
   }, []);
 
+  // Get the user ID from PeerJS and set it to state
   useEffect(() => {
-    if (!params.sessionId || !userState.id || !userState.localStream) return;
+    if (!localStream) return;
 
-    peer.on("error", (err) => {
+    peer.current.destroy();
+    peer.current = new Peer();
+    peer.current.on("open", () => dispatch(setId(peer.current.id)));
+  }, [localStream]);
+
+  // Initialize connection
+  useEffect(() => {
+    if (!params.sessionId || !userState.id || !localStream) return;
+
+    peer.current.on("error", (err) => {
       console.error(err);
     });
 
     // Listen for data connection
-    peer.on("connection", (conn) => {
+    peer.current.on("connection", (conn) => {
       // Remove peer on close
       conn.on("close", () => dispatch(removeRemotePeer(conn.peer)));
     });
 
     // Destroy the connection when the user closes browser tab
-    window.onbeforeunload = () => peer.destroy();
+    window.onbeforeunload = () => peer.current.destroy();
 
     // If someone calls you, answer with your stream
-    peer.on("call", (call) => {
-      call.answer(userState.localStream);
+    peer.current.on("call", (call) => {
+      mediaConnections.current.push(call);
+
+      call.answer(localStream);
       call.on("stream", (remoteStream) => {
         dispatch(
           addRemotePeer({
@@ -110,15 +105,17 @@ export default function Session() {
       });
     });
 
+    // If another user joins the channel, call them with your stream
     channel.current.on("broadcast", { event: "join" }, ({ payload }) => {
-      // If another user joins the channel, call them with your stream
-      if (payload !== userState.id && userState.localStream) {
+      if (payload !== userState.id && localStream) {
         // Start a data connection
-        const conn = peer.connect(payload);
+        const conn = peer.current.connect(payload);
         // Remove peer on close
         conn.on("close", () => dispatch(removeRemotePeer(payload)));
         // Call
-        const call = peer.call(payload, userState.localStream);
+        const call = peer.current.call(payload, localStream);
+        mediaConnections.current.push(call);
+
         call.on("stream", (remoteStream) => {
           dispatch(
             addRemotePeer({
@@ -168,12 +165,7 @@ export default function Session() {
       event: "join",
       payload: userState.id,
     });
-
-    return () => {
-      dispatch(resetState());
-      peer.destroy();
-    };
-  }, [params.sessionId, userState.id, userState.localStream]);
+  }, [params.sessionId, userState.id]);
 
   // Send data when the state has changed
   useEffect(() => {
@@ -199,21 +191,27 @@ export default function Session() {
 
   return (
     <main className="flex-1 flex items-center justify-center">
-      <div className="grid grid-cols-3 justify-center gap-4 px-4 h-full w-full">
-        {userState.localStream && (
+      <div className="grid sm:grid-cols-4 sm:grid-rows-3 justify-center items-center gap-4 px-4 h-full w-full">
+        {localStream ? (
           <CamFrame
+            id={userState.id}
             username={userState.name}
-            stream={userState.localStream}
+            stream={localStream}
             isAudioEnabled={userState.isAudioEnabled}
             isVideoEnabled={userState.isVideoEnabled}
             mirror={userState.isCameraMirrored}
             local
           />
+        ) : (
+          <div className="w-full h-full flex justify-center items-center">
+            <img src="/loading.svg" alt="loading" />
+          </div>
         )}
 
         {userState.remotePeers.map((remotePeer) => (
           <CamFrame
             key={remotePeer.id}
+            id={remotePeer.id}
             username={remotePeer.name}
             stream={remotePeer.stream}
             isAudioEnabled={remotePeer.isAudioEnabled}

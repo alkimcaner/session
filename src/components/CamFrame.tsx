@@ -1,9 +1,10 @@
 import React, { useEffect, useRef } from "react";
 import { BsCameraVideoOff, BsVolumeMute, BsEyeFill } from "react-icons/bs";
-import { useAppDispatch, useAppSelector } from "../typedReduxHooks";
+import { useAppDispatch, useAppSelector } from "../hooks/typedReduxHooks";
 import { setFocus } from "../slices/userSlice";
 
 interface IProps {
+  id: string | undefined;
   username: string;
   stream: MediaStream | undefined;
   isAudioEnabled: boolean;
@@ -13,6 +14,7 @@ interface IProps {
 }
 
 export default function CamFrame({
+  id,
   username,
   stream,
   isAudioEnabled,
@@ -28,11 +30,16 @@ export default function CamFrame({
     if (!videoRef.current || !stream) return;
     videoRef.current.srcObject = stream;
     videoRef.current.play();
+    return () => videoRef.current?.pause();
   }, [stream]);
 
   return (
     <div
-      className={`group relative aspect-video bg-base-300 rounded-btn overflow-hidden flex justify-center items-center shadow-lg`}
+      className={`group relative ${
+        userState.focus !== undefined && userState.focus === id
+          ? "col-start-1 row-start-1 col-span-3 row-span-3"
+          : "col-span-1 row-span-1"
+      } aspect-video bg-base-300 rounded-btn overflow-hidden flex justify-center items-center shadow-lg`}
     >
       <video
         ref={videoRef}
@@ -67,13 +74,7 @@ export default function CamFrame({
         data-tip="Focus"
       >
         <button
-          onClick={() => {
-            if (local) {
-              dispatch(setFocus("local"));
-            } else {
-              dispatch(setFocus("remote"));
-            }
-          }}
+          onClick={() => dispatch(setFocus(id))}
           className="btn btn-sm btn-square"
         >
           <BsEyeFill />
