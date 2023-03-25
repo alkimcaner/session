@@ -8,6 +8,7 @@ specifiers:
   '@vitejs/plugin-react-swc': ^3.0.0
   autoprefixer: ^10.4.13
   daisyui: ^2.51.3
+  date-fns: ^2.29.3
   peerjs: ^1.4.7
   postcss: ^8.4.21
   react: ^18.2.0
@@ -25,6 +26,7 @@ dependencies:
   '@reduxjs/toolkit': 1.9.3_k4ae6lp43ej6mezo3ztvx6pykq
   '@supabase/supabase-js': 2.10.0
   daisyui: 2.51.3_gbtt6ss3tbiz4yjtvdr6fbrj44
+  date-fns: 2.29.3
   peerjs: 1.4.7
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
@@ -662,6 +664,11 @@ packages:
       tailwindcss: 3.2.7_postcss@8.4.21
     transitivePeerDependencies:
       - ts-node
+    dev: false
+
+  /date-fns/2.29.3:
+    resolution: {integrity: sha512-dDCnyH2WnnKusqvZZ6+jA1O51Ibt8ZMRNkDZdyAyK4YfbDwa/cEmuztzG5pk6hqlp9aSBPYcjOlktquahGwGeA==}
+    engines: {node: '>=0.11'}
     dev: false
 
   /debug/2.6.9:

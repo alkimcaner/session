@@ -12,10 +12,12 @@ import { MediaConnection, Peer } from "peerjs";
 import { supabase } from "../supabaseClient";
 import { useParams } from "react-router-dom";
 import useMediaStream from "../hooks/useMediaStream";
+import { format } from "date-fns";
 
 interface IChatMessage {
   user: string;
-  message: string;
+  body: string;
+  time: number;
 }
 
 export default function Session() {
@@ -29,6 +31,27 @@ export default function Session() {
   const channel = useRef(supabase.channel(params.sessionId!));
   const mediaConnections = useRef<MediaConnection[]>([]);
   const localStream = useMediaStream();
+
+  const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!userState.remotePeers.length || !messageInput.length) return;
+
+    const message: IChatMessage = {
+      user: userState.name,
+      body: messageInput,
+      time: Date.now(),
+    };
+
+    channel.current.send({
+      type: "broadcast",
+      event: "chat",
+      payload: message,
+    });
+
+    setMessageInput("");
+    setMessages((prev) => [...prev, message]);
+  };
 
   // Scroll chat
   useEffect(() => {
@@ -145,8 +168,8 @@ export default function Session() {
       }
     });
 
+    // If another user sends data event, update the state
     channel.current.on("broadcast", { event: "data" }, ({ payload }) => {
-      // If another user sends data event, update the state
       dispatch(
         addRemotePeer({
           id: payload.id,
@@ -157,6 +180,11 @@ export default function Session() {
           isCameraMirrored: payload.isCameraMirrored,
         })
       );
+    });
+
+    // If another user sends chat event, update the state
+    channel.current.on("broadcast", { event: "chat" }, ({ payload }) => {
+      setMessages((prev) => [...prev, payload]);
     });
 
     // If you successfully subscribed to the channel, send a join message with your user ID
@@ -227,16 +255,26 @@ export default function Session() {
       >
         <ul
           ref={chatElementRef}
-          className="flex-1 scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-secondary"
+          className="flex-1 scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-secondary pr-2"
         >
-          {messages.map((message, idx) => (
-            <li key={idx} className="break-words">
-              <b className="text-primary">{message.user}: </b>
-              {message.message}
+          {messages.map((message, index) => (
+            <li
+              key={index}
+              className={`chat ${
+                message.user === userState.name ? "chat-end" : "chat-start"
+              }`}
+            >
+              <div className="chat-header">
+                {message.user}
+                <time className="text-xs opacity-50 ml-2">
+                  {format(new Date(message.time), "HH:mm")}
+                </time>
+              </div>
+              <div className="chat-bubble">{message.body}</div>
             </li>
           ))}
         </ul>
-        <form className="form-control">
+        <form className="form-control" onSubmit={handleSendMessage}>
           <div className="input-group">
             <input
               type="text"
