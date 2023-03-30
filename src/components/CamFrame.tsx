@@ -48,7 +48,7 @@ export default function CamFrame({
         controls={false}
         muted={local ? true : !isAudioEnabled}
         className={`w-full ${mirror && "-scale-x-100"} ${
-          !isVideoEnabled && "hidden"
+          !isVideoEnabled && "invisible"
         }`}
       />
 

@@ -5,10 +5,11 @@ import {
   addRemotePeer,
   setId,
   removeRemotePeer,
+  setUnreadMessages,
 } from "../slices/userSlice";
 import ActionBar from "../components/ActionBar";
 import { useAppDispatch, useAppSelector } from "../hooks/typedReduxHooks";
-import { MediaConnection, Peer } from "peerjs";
+import { Peer } from "peerjs";
 import { supabase } from "../supabaseClient";
 import { useParams } from "react-router-dom";
 import useMediaStream from "../hooks/useMediaStream";
@@ -29,7 +30,6 @@ export default function Session() {
   const [messages, setMessages] = useState<IChatMessage[]>([]);
   const peer = useRef<Peer>(new Peer());
   const channel = useRef(supabase.channel(params.sessionId!));
-  const mediaConnections = useRef<MediaConnection[]>([]);
   const localStream = useMediaStream();
 
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
@@ -53,12 +53,21 @@ export default function Session() {
     setMessages((prev) => [...prev, message]);
   };
 
-  // Scroll chat
   useEffect(() => {
+    // Show message indicator
+    if (!userState.isChatVisible && messages.length > 0) {
+      dispatch(setUnreadMessages(userState.unreadMessages + 1));
+    }
+    // Scroll chat
     chatElementRef.current?.lastElementChild?.scrollIntoView({
       behavior: "smooth",
     });
   }, [messages]);
+
+  useEffect(() => {
+    // Clear unread messages
+    dispatch(setUnreadMessages(0));
+  }, [userState.isChatVisible]);
 
   useEffect(() => {
     channel.current.subscribe();
@@ -97,8 +106,6 @@ export default function Session() {
 
     // If someone calls you, answer with your stream
     peer.current.on("call", (call) => {
-      mediaConnections.current.push(call);
-
       call.answer(localStream);
       call.on("stream", (remoteStream) => {
         dispatch(
@@ -137,7 +144,6 @@ export default function Session() {
         conn.on("close", () => dispatch(removeRemotePeer(payload)));
         // Call
         const call = peer.current.call(payload, localStream);
-        mediaConnections.current.push(call);
 
         call.on("stream", (remoteStream) => {
           dispatch(
@@ -264,13 +270,13 @@ export default function Session() {
                 message.user === userState.name ? "chat-end" : "chat-start"
               }`}
             >
-              <div className="chat-header">
-                {message.user}
-                <time className="text-xs opacity-50 ml-2">
+              <div className="chat-header">{message.user}</div>
+              <div className="chat-bubble">{message.body}</div>
+              <div className="chat-footer">
+                <time className="text-xs opacity-50">
                   {format(new Date(message.time), "HH:mm")}
                 </time>
               </div>
-              <div className="chat-bubble">{message.body}</div>
             </li>
           ))}
         </ul>

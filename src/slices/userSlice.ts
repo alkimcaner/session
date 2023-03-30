@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import {
   colors,
@@ -6,7 +6,6 @@ import {
   Config,
   uniqueNamesGenerator,
 } from "unique-names-generator";
-import { AppDispatch, RootState } from "../store";
 
 const nameGenConfig: Config = {
   dictionaries: [colors, animals],
@@ -38,6 +37,7 @@ export interface UserState {
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
   isScreenShareEnabled: boolean;
+  unreadMessages: number;
   isChatVisible: boolean;
   isPermissionsGranted: boolean;
   defaultAudioDeviceId: string;
@@ -54,6 +54,7 @@ const initialState: UserState = {
   isVideoEnabled: true,
   isAudioEnabled: true,
   isScreenShareEnabled: false,
+  unreadMessages: 0,
   isChatVisible: false,
   isPermissionsGranted: false,
   defaultAudioDeviceId: defaultAudioDeviceId || "default",
@@ -107,6 +108,9 @@ export const userSlice = createSlice({
     setIsAudioEnabled: (state, action: PayloadAction<boolean>) => {
       state.isAudioEnabled = action.payload;
     },
+    setUnreadMessages: (state, action: PayloadAction<number>) => {
+      state.unreadMessages = action.payload;
+    },
     setIsChatVisible: (state, action: PayloadAction<boolean>) => {
       state.isChatVisible = action.payload;
     },
@@ -157,6 +161,7 @@ export const {
   removeRemotePeer,
   setIsVideoEnabled,
   setIsAudioEnabled,
+  setUnreadMessages,
   setIsChatVisible,
   setIsScreenShareEnabled,
   setIsPermissionsGranted,

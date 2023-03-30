@@ -72,9 +72,14 @@ export default function ActionBar() {
         </button>
       </li>
       <li
-        className="tooltip"
+        className="tooltip indicator"
         data-tip={userState.isChatVisible ? "Hide chat" : "Show chat"}
       >
+        {userState.unreadMessages > 0 && (
+          <span className="indicator-item indicator-bottom badge badge-secondary select-none">
+            {userState.unreadMessages}
+          </span>
+        )}
         <button
           onClick={() => dispatch(setIsChatVisible(!userState.isChatVisible))}
           className={`text-lg btn btn-square ${
