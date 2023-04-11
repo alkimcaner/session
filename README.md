@@ -8,6 +8,7 @@ Built with:
 - PeerJS
 - React
 - Redux
+- React Router
 - Typescript
 - Supabase
 - Tailwindcss
