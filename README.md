@@ -15,7 +15,7 @@ Built with:
 
 ## Screenshot
 
-![gif](https://github.com/alkimcaner/portfolio/blob/main/public/assets/session.jpg)
+![image](https://user-images.githubusercontent.com/17219339/234253152-8b2679d4-8a2e-4d47-b16f-def531c81c20.png)
 
 ## Project Setup
 
