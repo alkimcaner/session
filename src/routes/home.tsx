@@ -33,9 +33,9 @@ export default function Home() {
   };
 
   return (
-    <main className="flex-1 max-w-7xl mx-auto flex flex-col lg:flex-row justify-center items-center gap-16 p-4">
-      <div className="flex flex-col gap-8 justify-center">
-        <h1 className="text-5xl text-primary font-bold">
+    <main className="mx-auto flex max-w-7xl flex-1 flex-col items-center justify-center gap-16 p-4 lg:flex-row">
+      <div className="flex flex-col justify-center gap-8">
+        <h1 className="text-5xl font-bold text-primary">
           High quality video calls for ✨
           <span className="text-yellow-400">free</span>✨
         </h1>
@@ -43,8 +43,8 @@ export default function Home() {
           Got tired of subscriptions? Call anyone without thinking about montly
           plans. Session is free of charge.
         </p>
-        <div className="flex items-center gap-4 w-fit flex-wrap">
-          <button onClick={handleCreate} className="btn btn-primary gap-2">
+        <div className="flex w-fit flex-wrap items-center gap-4">
+          <button onClick={handleCreate} className="btn-primary btn gap-2">
             <BsCameraVideo />
             New Session
           </button>
@@ -53,10 +53,10 @@ export default function Home() {
               <input
                 type="text"
                 placeholder="Enter session code"
-                className="input input-bordered"
+                className="input-bordered input"
                 onChange={(e) => setSessionCode(e.target.value)}
               />
-              <input type="submit" value="Join" className="btn btn-primary" />
+              <input type="submit" value="Join" className="btn-primary btn" />
             </div>
           </form>
         </div>

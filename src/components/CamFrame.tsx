@@ -37,9 +37,9 @@ export default function CamFrame({
     <div
       className={`group relative ${
         userState.focus !== undefined && userState.focus === id
-          ? "col-start-1 row-start-1 col-span-3 row-span-3"
+          ? "col-span-3 col-start-1 row-span-3 row-start-1"
           : "col-span-1 row-span-1"
-      } aspect-video bg-base-300 rounded-btn overflow-hidden flex justify-center items-center shadow-lg`}
+      } rounded-btn flex aspect-video items-center justify-center overflow-hidden bg-base-300 shadow-lg`}
     >
       <video
         ref={videoRef}
@@ -53,14 +53,14 @@ export default function CamFrame({
       />
 
       {!isVideoEnabled && (
-        <div className="text-2xl text-base-content absolute">
+        <div className="absolute text-2xl text-base-content">
           <BsCameraVideoOff />
         </div>
       )}
 
-      <div className="absolute flex items-center gap-1 bottom-1 left-1 px-2 py-1 text-xs text-white bg-black bg-opacity-50 rounded-btn">
+      <div className="rounded-btn absolute bottom-1 left-1 flex items-center gap-1 bg-black bg-opacity-50 px-2 py-1 text-xs text-white">
         {!isAudioEnabled && (
-          <span className="text-red-500 text-base">
+          <span className="text-base text-red-500">
             <BsVolumeMute />
           </span>
         )}
@@ -75,7 +75,7 @@ export default function CamFrame({
       >
         <button
           onClick={() => dispatch(setFocus(id))}
-          className="btn btn-sm btn-square"
+          className="btn-square btn-sm btn"
         >
           <BsEyeFill />
         </button>

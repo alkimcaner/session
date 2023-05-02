@@ -100,36 +100,36 @@ export default function SettingsModal() {
 
   return (
     <div>
-      <label htmlFor="my-modal-4" className="btn btn-primary gap-2">
+      <label htmlFor="my-modal-4" className="btn-primary btn gap-2">
         <FiSettings />
         <span className="hidden sm:inline">Settings</span>
       </label>
       <input type="checkbox" id="my-modal-4" className="modal-toggle" />
       <label htmlFor="my-modal-4" className="modal cursor-pointer">
         <label className="modal-box relative" htmlFor="">
-          <h3 className="text-lg font-bold pb-4">Settings</h3>
-          <div className="flex justify-between items-center py-4">
+          <h3 className="pb-4 text-lg font-bold">Settings</h3>
+          <div className="flex items-center justify-between py-4">
             <span>Username</span>
             <form onSubmit={handleSetName} className="form-control">
-              <div className="input-group input-group-sm">
+              <div className="input-group-sm input-group">
                 {isNameEditable ? (
                   <input
                     ref={inputRef}
                     type="text"
                     placeholder="Enter name"
-                    className="input input-primary input-sm w-full max-w-[12rem]"
+                    className="input-primary input input-sm w-full max-w-[12rem]"
                   />
                 ) : (
                   <span>{userState.name}</span>
                 )}
 
-                <button type="submit" className="btn btn-sm">
+                <button type="submit" className="btn-sm btn">
                   {isNameEditable ? <TiTick /> : <FiEdit />}
                 </button>
               </div>
             </form>
           </div>
-          <div className="flex justify-between items-center py-4">
+          <div className="flex items-center justify-between py-4">
             <span>Default Microphone</span>
             {userState.isPermissionsGranted ? (
               <select
@@ -137,7 +137,7 @@ export default function SettingsModal() {
                 onChange={(e) =>
                   dispatch(setDefaultAudioDeviceId(e.target.value))
                 }
-                className="select select-bordered select-sm w-full max-w-[12rem]"
+                className="select-bordered select select-sm w-full max-w-[12rem]"
               >
                 <option disabled value="">
                   Pick a microphone
@@ -151,13 +151,13 @@ export default function SettingsModal() {
             ) : (
               <button
                 onClick={handleGrantPermission}
-                className="btn btn-sm btn-warning"
+                className="btn-warning btn-sm btn"
               >
                 Permissions required
               </button>
             )}
           </div>
-          <div className="flex justify-between items-center py-4">
+          <div className="flex items-center justify-between py-4">
             <span>Default Camera</span>
             {userState.isPermissionsGranted ? (
               <select
@@ -165,7 +165,7 @@ export default function SettingsModal() {
                 onChange={(e) =>
                   dispatch(setDefaultVideoDeviceId(e.target.value))
                 }
-                className="select select-bordered select-sm w-full max-w-[12rem]"
+                className="select-bordered select select-sm w-full max-w-[12rem]"
               >
                 <option disabled value="">
                   Pick a camera
@@ -179,17 +179,17 @@ export default function SettingsModal() {
             ) : (
               <button
                 onClick={handleGrantPermission}
-                className="btn btn-sm btn-warning"
+                className="btn-warning btn-sm btn"
               >
                 Permissions required
               </button>
             )}
           </div>
-          <div className="flex justify-between items-center py-4">
+          <div className="flex items-center justify-between py-4">
             <span>Mirror Camera</span>
             <input
               type="checkbox"
-              className="toggle toggle-primary"
+              className="toggle-primary toggle"
               checked={userState.isCameraMirrored}
               onChange={(e) => dispatch(setIsCameraMirrored(e.target.checked))}
             />

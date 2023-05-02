@@ -44,11 +44,11 @@ export default function ActionBar() {
     <ul
       className={`fixed ${
         isHidden ? "-bottom-16" : "bottom-8"
-      } flex justify-center items-center gap-1 z-20 p-2 bg-base-300 shadow-xl rounded-btn transition-[bottom]`}
+      } rounded-btn z-20 flex items-center justify-center gap-1 bg-base-300 p-2 shadow-xl transition-[bottom]`}
     >
       <button
         onClick={() => setIsHidden(!isHidden)}
-        className="absolute -top-12 btn btn-circle btn-sm text-xl"
+        className="btn-sm btn-circle btn absolute -top-12 text-xl"
       >
         {isHidden ? <BsArrowUpShort /> : <BsArrowDownShort />}
       </button>
@@ -66,7 +66,7 @@ export default function ActionBar() {
       <li className="tooltip" data-tip={copyTooltip}>
         <button
           onClick={handleCopy}
-          className="text-lg btn btn-square btn-ghost"
+          className="btn-ghost btn-square btn text-lg"
         >
           <BsClipboard />
         </button>
@@ -76,13 +76,13 @@ export default function ActionBar() {
         data-tip={userState.isChatVisible ? "Hide chat" : "Show chat"}
       >
         {userState.unreadMessages > 0 && (
-          <span className="indicator-item indicator-bottom badge badge-secondary select-none">
+          <span className="badge-secondary badge indicator-bottom indicator-item select-none">
             {userState.unreadMessages}
           </span>
         )}
         <button
           onClick={() => dispatch(setIsChatVisible(!userState.isChatVisible))}
-          className={`text-lg btn btn-square ${
+          className={`btn-square btn text-lg ${
             userState.isChatVisible ? "btn-primary" : "btn-ghost"
           }`}
         >
@@ -94,7 +94,7 @@ export default function ActionBar() {
           onClick={() =>
             dispatch(setIsScreenShareEnabled(!userState.isScreenShareEnabled))
           }
-          className={`text-lg btn btn-square ${
+          className={`btn-square btn text-lg ${
             userState.isScreenShareEnabled ? "btn-primary" : "btn-ghost"
           }`}
         >
@@ -107,7 +107,7 @@ export default function ActionBar() {
       >
         <button
           onClick={() => dispatch(setIsVideoEnabled(!userState.isVideoEnabled))}
-          className={`text-lg btn btn-square ${
+          className={`btn-square btn text-lg ${
             userState.isVideoEnabled ? "btn-ghost" : "btn-error"
           }`}
         >
@@ -122,7 +122,7 @@ export default function ActionBar() {
       >
         <button
           onClick={() => dispatch(setIsAudioEnabled(!userState.isAudioEnabled))}
-          className={`text-lg btn btn-square ${
+          className={`btn-square btn text-lg ${
             userState.isAudioEnabled ? "btn-ghost" : "btn-error"
           }`}
         >
@@ -131,7 +131,7 @@ export default function ActionBar() {
       </li>
       <li className="tooltip" data-tip="Leave session">
         <Link to="/">
-          <div className="text-lg btn btn-square btn-error">
+          <div className="btn-error btn-square btn text-lg">
             <IoCallOutline />
           </div>
         </Link>

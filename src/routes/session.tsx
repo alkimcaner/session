@@ -224,8 +224,8 @@ export default function Session() {
   ]);
 
   return (
-    <main className="flex-1 flex items-center justify-center">
-      <div className="grid sm:grid-cols-4 sm:grid-rows-3 justify-center items-center gap-4 px-4 h-full w-full">
+    <main className="flex flex-1 items-center justify-center">
+      <div className="grid h-full w-full items-center justify-center gap-4 px-4 sm:grid-cols-4 sm:grid-rows-3">
         {localStream ? (
           <CamFrame
             id={userState.id}
@@ -237,7 +237,7 @@ export default function Session() {
             local
           />
         ) : (
-          <div className="w-full h-full flex justify-center items-center">
+          <div className="flex h-full w-full items-center justify-center">
             <img src="/loading.svg" alt="loading" />
           </div>
         )}
@@ -255,13 +255,13 @@ export default function Session() {
         ))}
       </div>
       <div
-        className={`fixed right-4 bg-base-300 p-4 h-1/2 w-72 flex flex-col gap-4 rounded-xl shadow-lg transition-all ease-in-out ${
-          !userState.isChatVisible && "invisible opacity-0 scale-95"
+        className={`fixed right-4 flex h-1/2 w-72 flex-col gap-4 rounded-xl bg-base-300 p-4 shadow-lg transition-all ease-in-out ${
+          !userState.isChatVisible && "invisible scale-95 opacity-0"
         }`}
       >
         <ul
           ref={chatElementRef}
-          className="flex-1 scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-secondary pr-2"
+          className="flex-1 pr-2 scrollbar-thin scrollbar-thumb-secondary scrollbar-thumb-rounded-full"
         >
           {messages.map((message, index) => (
             <li
@@ -285,7 +285,7 @@ export default function Session() {
             <input
               type="text"
               placeholder="Send a message"
-              className="input input-bordered w-full"
+              className="input-bordered input w-full"
               value={messageInput}
               onChange={(e) => setMessageInput(e.target.value)}
               disabled={!userState.remotePeers.length}
@@ -293,7 +293,7 @@ export default function Session() {
             <input
               type="submit"
               value="Chat"
-              className="btn btn-square"
+              className="btn-square btn"
               disabled={!userState.remotePeers.length}
             ></input>
           </div>

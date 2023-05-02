@@ -48,30 +48,30 @@ export default function Navbar() {
   }, [userState.theme]);
 
   return (
-    <nav className="w-full flex justify-center items-center p-4 gap-4 max-w-5xl mx-auto">
+    <nav className="mx-auto flex w-full max-w-5xl items-center justify-center gap-4 p-4">
       <Link
         to="/"
-        className="text-2xl font-extrabold text-primary hover:text-secondary-focus transition-colors mr-auto"
+        className="mr-auto text-2xl font-extrabold text-primary transition-colors hover:text-secondary-focus"
       >
         SESSION
       </Link>
       {/* Theme Menu */}
-      <div className="dropdown dropdown-end">
-        <label tabIndex={0} className="btn btn-ghost gap-2">
+      <div className="dropdown-end dropdown">
+        <label tabIndex={0} className="btn-ghost btn gap-2">
           <BsPalette2 />
           <span className="hidden sm:inline">Theme</span>
           <MdKeyboardArrowDown />
         </label>
         <ul
           tabIndex={0}
-          className="dropdown-content p-2 pr-4 shadow-xl bg-base-200 rounded-box w-48 h-64 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-primary grid grid-cols-1"
+          className="dropdown-content rounded-box grid h-64 w-48 grid-cols-1 bg-base-200 p-2 pr-4 shadow-xl scrollbar-thin scrollbar-thumb-primary scrollbar-thumb-rounded"
         >
           {themes.map((theme, index) => (
             <li key={index}>
               <button
                 className={`btn ${
                   userState.theme === theme ? "btn-primary" : "btn-ghost"
-                } justify-start w-full`}
+                } w-full justify-start`}
                 onClick={() => dispatch(setTheme(theme))}
               >
                 {theme}
