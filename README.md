@@ -22,17 +22,17 @@ Built with:
 ### Install dependencies
 
 ```bash
-pnpm install
+npm install
 ```
 
 ### Start dev server
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
 ### Build for production
 
 ```bash
-pnpm build
+npm run build
 ```
