@@ -1,6 +1,6 @@
 # Session
 
-[Live demo](https://session.alkimcaner.com/)
+[Live demo](https://session-alkimcaner.vercel.app/)
 
 Built with:
 
